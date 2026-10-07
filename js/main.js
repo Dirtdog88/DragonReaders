@@ -1,9 +1,9 @@
 import { TILE, buildPlayerSprites, buildNpcSprites, buildTiles } from './sprites.js';
-import { MAPS, SOLID, tileAt } from './maps.js';
+import { MAPS, SOLID, ENCOUNTER_TILES, AREA_DONE_LINES, tileAt } from './maps.js';
 import { createInput } from './input.js';
 import { loadSave, writeSave, newSave } from './storage.js';
 import { speak } from './speech.js';
-import { pickWildDragon, wordChoices, dragonById } from './dragons.js';
+import { pickWildDragon, wordChoices, dragonById, dragonsIn, areaDone, unlockedAreas } from './dragons.js';
 import { createCapture } from './capture.js';
 
 const VIEW_W = 160;
@@ -13,6 +13,7 @@ const MAX_NAME = 8;
 const ENCOUNTER_CHANCE = 0.1; // per step in tall grass
 const ENCOUNTER_GRACE = 3; // safe steps after an encounter
 const FLASH_MS = 800;
+const WARP_MS = 400; // fade out + in when walking to a new area
 const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
 const $ = (id) => document.getElementById(id);
@@ -106,6 +107,7 @@ let map = null;
 let player = null;
 let dialogue = null; // { lines, i }
 let flash = null; // { t } while the screen flashes before an encounter
+let warp = null; // { t, exit, moved } while fading to a new area
 let stepsSinceEncounter = 0;
 
 const capture = createCapture({
@@ -116,9 +118,12 @@ const capture = createCapture({
   },
   onDone({ dragon, caught }) {
     if (caught) {
+      const wasDone = areaDone(dragon.area, save.caught);
       if (!save.caught.includes(dragon.id)) save.caught.push(dragon.id);
       save.catches[dragon.id] = (save.catches[dragon.id] || 0) + 1;
       writeSave(save);
+      // Caught the last one here: celebrate and open the next area.
+      if (!wasDone && areaDone(dragon.area, save.caught)) openDialogue(AREA_DONE_LINES[dragon.area]);
     }
     stepsSinceEncounter = 0;
     input.clear();
@@ -159,16 +164,39 @@ function startWorld() {
   }
 }
 
+// Gatekeepers step aside once their area's dragons are all caught.
+function visibleNpcs() {
+  return map.npcs.filter((n) => !n.gate || !areaDone(n.gate, save.caught));
+}
+
 function npcAt(x, y) {
-  return map.npcs.find((n) => n.x === x && n.y === y);
+  return visibleNpcs().find((n) => n.x === x && n.y === y);
+}
+
+function talkTo(npc) {
+  const vars = {};
+  if (npc.gate) {
+    const here = dragonsIn(npc.gate);
+    vars.total = here.length;
+    vars.count = here.filter((d) => save.caught.includes(d.id)).length;
+  }
+  openDialogue(npc.lines, vars);
+}
+
+function moveTo(mapId, x, y, dir) {
+  map = MAPS[mapId];
+  Object.assign(player, { x, y, dir, moving: false, t: 0 });
+  Object.assign(save, { map: mapId, x, y, dir });
+  writeSave(save);
 }
 
 function walkable(x, y) {
   return !SOLID.has(tileAt(map, x, y)) && !npcAt(x, y);
 }
 
-function openDialogue(lines) {
-  dialogue = { lines: lines.map((l) => l.replaceAll('{name}', save.name)), i: 0 };
+function openDialogue(lines, vars = {}) {
+  const fill = (l) => l.replace(/\{(\w+)\}/g, (m, k) => (k === 'name' ? save.name : vars[k] ?? m));
+  dialogue = { lines: lines.map(fill), i: 0 };
   renderDialogue();
 }
 
@@ -203,8 +231,18 @@ function update(dt) {
     if (flash.t >= FLASH_MS) {
       const dragon = dragonById(flash.forceId) || pickWildDragon(map.id, save.caught);
       flash = null;
-      capture.start(dragon, wordChoices(dragon, choiceCount()));
+      capture.start(dragon, wordChoices(dragon, choiceCount(), unlockedAreas(save.caught)));
     }
+    return;
+  }
+  if (warp) {
+    warp.t += dt;
+    if (!warp.moved && warp.t >= WARP_MS / 2) {
+      const e = warp.exit;
+      moveTo(e.to, e.tx, e.ty, e.dir);
+      warp.moved = true;
+    }
+    if (warp.t >= WARP_MS) warp = null;
     return;
   }
   if (dialogue) {
@@ -221,7 +259,12 @@ function update(dt) {
     save.y = player.y;
     save.dir = player.dir;
     writeSave(save);
-    if (tileAt(map, player.x, player.y) === 'G') {
+    const exit = map.exits?.find((e) => e.x === player.x && e.y === player.y);
+    if (exit) {
+      warp = { t: 0, exit, moved: false };
+      return;
+    }
+    if (ENCOUNTER_TILES.has(tileAt(map, player.x, player.y))) {
       stepsSinceEncounter++;
       if (stepsSinceEncounter > ENCOUNTER_GRACE && Math.random() < ENCOUNTER_CHANCE) {
         beginEncounter();
@@ -234,7 +277,7 @@ function update(dt) {
   if (input.takeA()) {
     const [dx, dy] = DIRS[player.dir];
     const npc = npcAt(player.x + dx, player.y + dy);
-    if (npc) { openDialogue(npc.lines); return; }
+    if (npc) { talkTo(npc); return; }
   }
 
   const dir = input.direction();
@@ -280,7 +323,7 @@ function render(time) {
     }
   }
 
-  for (const npc of map.npcs) {
+  for (const npc of visibleNpcs()) {
     const s = npcSprites[npc.id];
     if (s) ctx.drawImage(s, npc.x * TILE - camX, npc.y * TILE - camY);
   }
@@ -294,6 +337,12 @@ function render(time) {
   const standTile = tileAt(map, Math.round(px / TILE), Math.round(py / TILE));
   if (standTile === 'G') {
     ctx.drawImage(tiles.G[frame], 0, 11, TILE, 5, px - camX, py - camY + 11, TILE, 5);
+  }
+
+  if (warp) {
+    const k = warp.t < WARP_MS / 2 ? warp.t / (WARP_MS / 2) : 1 - (warp.t - WARP_MS / 2) / (WARP_MS / 2);
+    ctx.fillStyle = `rgba(0, 0, 0, ${Math.min(1, k)})`;
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   }
 
   // Encounter flash: blink white, then wipe to black.
@@ -335,7 +384,12 @@ function loop(now) {
 
 // Testing helpers: open the game with ?debug in the address.
 if (location.search.includes('debug')) {
-  window.__dr = { encounter: beginEncounter, save: () => save };
+  window.__dr = {
+    encounter: beginEncounter,
+    save: () => save,
+    give(ids) { for (const id of ids) if (!save.caught.includes(id)) save.caught.push(id); writeSave(save); },
+    warp(mapId, x, y) { moveTo(mapId, x, y, 'down'); },
+  };
 }
 
 setupTitle();

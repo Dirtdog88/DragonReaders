@@ -113,13 +113,13 @@ function makeCanvas(w, h) {
   return c;
 }
 
-function paint(rows) {
+function paint(rows, colors = {}) {
   const c = makeCanvas(TILE, TILE);
   const ctx = c.getContext('2d');
   rows.forEach((row, y) => {
     [...row].forEach((ch, x) => {
       if (ch === '.') return;
-      ctx.fillStyle = PALETTE[ch] || '#ff00ff';
+      ctx.fillStyle = colors[ch] || PALETTE[ch] || '#ff00ff';
       ctx.fillRect(x, y, 1, 1);
     });
   });
@@ -137,8 +137,13 @@ export function buildPlayerSprites() {
   return out;
 }
 
+// Other Dragon Masters reuse the player's shape with their own colors.
 export function buildNpcSprites() {
-  return { griffith: paint(GRIFFITH) };
+  return {
+    griffith: paint(GRIFFITH),
+    ana: paint(PLAYER_DOWN, { h: '#3b2414', r: '#f2a900', b: '#7a4a26' }),
+    bo: paint(PLAYER_DOWN, { h: '#2b2b3a', r: '#2f7fd1', b: '#1d4f8a' }),
+  };
 }
 
 // ---------- Tiles ----------
@@ -280,6 +285,49 @@ const TILE_PAINTERS = {
     ctx.fillRect(5, 6, 3, 2);
   },
 };
+
+Object.assign(TILE_PAINTERS, {
+  W: (ctx) => {
+    ctx.fillStyle = '#2a2433';
+    ctx.fillRect(0, 0, TILE, TILE);
+    ctx.fillStyle = '#3d344b';
+    ctx.fillRect(1, 2, 6, 4);
+    ctx.fillRect(9, 9, 6, 4);
+    ctx.fillStyle = '#4e4560';
+    ctx.fillRect(2, 2, 3, 1);
+    ctx.fillRect(10, 9, 3, 1);
+  },
+  ',': (ctx) => {
+    ctx.fillStyle = '#4a4458';
+    ctx.fillRect(0, 0, TILE, TILE);
+    ctx.fillStyle = '#56506a';
+    const r = rng(17);
+    for (let i = 0; i < 5; i++) ctx.fillRect(Math.floor(r() * 15), Math.floor(r() * 15), 1, 1);
+  },
+  g: (ctx, frame) => {
+    ctx.fillStyle = '#3a3448';
+    ctx.fillRect(0, 0, TILE, TILE);
+    ctx.fillStyle = '#6a6280';
+    for (let y = 1; y < TILE; y += 4) {
+      for (let x = (y % 8 === 1 ? 1 : 3); x < TILE; x += 4) ctx.fillRect(x, y, 2, 2);
+    }
+    ctx.fillStyle = frame ? '#9fd3ff' : '#c9a0e8';
+    ctx.fillRect(5, 6, 1, 1);
+    ctx.fillRect(12, 13, 1, 1);
+  },
+  C: (ctx, frame) => {
+    TILE_PAINTERS[','](ctx);
+    ctx.fillStyle = frame ? '#7fd8ff' : '#5fb4ff';
+    ctx.beginPath();
+    ctx.moveTo(8, 1);
+    ctx.lineTo(13, 8);
+    ctx.lineTo(8, 15);
+    ctx.lineTo(3, 8);
+    ctx.fill();
+    ctx.fillStyle = '#e6f7ff';
+    ctx.fillRect(7, 4, 2, 5);
+  },
+});
 
 // tiles[char][frame] (two frames so water can shimmer)
 export function buildTiles() {

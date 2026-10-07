@@ -25,7 +25,80 @@ export const DRAGONS = [
     word: 'hot', area: 'bracken', effect: 'hot', shape: 'winged',
     colors: { main: '#d62f2f', light: '#ffb36b', dark: '#8e1b1b', accent: '#ffd23f' },
   },
+  // ---- Forest
+  {
+    id: 'zera', name: 'Zera', type: 'Poison', book: 5, master: 'Petra',
+    word: 'gas', area: 'forest', effect: 'gas', shape: 'winged',
+    colors: { main: '#7b3fa0', light: '#c9a0e8', dark: '#4a2266', accent: '#7dff6a' },
+  },
+  {
+    id: 'lalo', name: 'Lalo', type: 'Lightning', book: 7, master: 'Carlos',
+    word: 'zap', area: 'forest', effect: 'zap', shape: 'winged',
+    colors: { main: '#2f4fb0', light: '#8fb0ff', dark: '#1a2a6a', accent: '#ffe14a' },
+  },
+  {
+    id: 'neru', name: 'Neru', type: 'Thunder', book: 8, master: 'Eko',
+    word: 'bam', area: 'forest', effect: 'bam', shape: 'winged',
+    colors: { main: '#5a5f7a', light: '#a9aec8', dark: '#33364a', accent: '#ffe14a' },
+  },
+  {
+    id: 'dayo', name: 'Dayo', type: 'Rainbow', book: 10, master: 'Obi',
+    word: 'rainbow', area: 'forest', effect: 'rainbow', shape: 'winged',
+    colors: { main: '#9b5de5', light: '#fee440', dark: '#00a6e0', accent: '#f15bb5' },
+  },
+  {
+    id: 'fallyn', name: 'Fallyn', type: 'Spring', book: 14, master: 'Breen',
+    word: 'bud', area: 'forest', effect: 'bud', shape: 'winged',
+    colors: { main: '#6cc25a', light: '#d8f5b0', dark: '#3d8a35', accent: '#ff7eb6' },
+  },
+  // ---- Mountain cave
+  {
+    id: 'wati', name: 'Wati', type: 'Moon', book: 6, master: 'Heru',
+    word: 'moon', area: 'cave', effect: 'moon', shape: 'winged',
+    colors: { main: '#b8c0dc', light: '#eef2ff', dark: '#6b74a0', accent: '#4060ff' },
+  },
+  {
+    id: 'frost', name: 'Frost', type: 'Ice', book: 9, master: 'Mina',
+    word: 'ice', area: 'cave', effect: 'ice', shape: 'winged',
+    colors: { main: '#a8dcf7', light: '#ffffff', dark: '#5fa3d0', accent: '#2f7fd1' },
+  },
+  {
+    id: 'argent', name: 'Argent', type: 'Silver', book: 11, master: 'Jean',
+    word: 'silver', area: 'cave', effect: 'silver', shape: 'winged',
+    colors: { main: '#b9bec8', light: '#eef0f4', dark: '#7a808b', accent: '#3a7bd5' },
+  },
+  {
+    id: 'hema', name: 'Hema', type: 'Gold', book: 12, master: 'Darma',
+    word: 'gold', area: 'cave', effect: 'gold', shape: 'winged',
+    colors: { main: '#e0b030', light: '#fff0a0', dark: '#a07010', accent: '#d62f2f' },
+  },
+  {
+    id: 'naga', name: 'Naga', type: 'Earthquake', book: 13, master: 'Uri and Zelda',
+    word: 'rock', area: 'cave', effect: 'rock', shape: 'winged', wings: false,
+    colors: { main: '#8a7a66', light: '#c2b49a', dark: '#55493a', accent: '#ff8c1a' },
+  },
 ];
+
+// Areas in the order they unlock.
+export const AREAS = ['bracken', 'forest', 'cave'];
+
+export function dragonsIn(area) {
+  return DRAGONS.filter((d) => d.area === area);
+}
+
+export function areaDone(area, caught) {
+  return dragonsIn(area).every((d) => caught.includes(d.id));
+}
+
+// An area is open once every area before it is complete.
+export function unlockedAreas(caught) {
+  const out = [];
+  for (const a of AREAS) {
+    out.push(a);
+    if (!areaDone(a, caught)) break;
+  }
+  return out;
+}
 
 export function dragonById(id) {
   return DRAGONS.find((d) => d.id === id);
@@ -71,13 +144,18 @@ function px(ctx, x, y, w, h, color) {
   ctx.fillRect(x, y, w, h);
 }
 
-// Four-legged dragon with wings, facing left.
-function drawWinged(ctx, c) {
+// Four-legged dragon, facing left. Wings unless wings === false.
+function drawWinged(ctx, c, wings = true) {
   // Wing behind the body
-  poly(ctx, [[36, 34], [43, 8], [50, 14], [57, 6], [61, 26], [48, 37]], c.dark);
-  stroke(ctx, [[40, 33], [43, 9]], 2, c.main);
-  stroke(ctx, [[44, 34], [50, 14]], 2, c.main);
-  stroke(ctx, [[48, 35], [57, 7]], 2, c.main);
+  if (wings) {
+    poly(ctx, [[36, 34], [43, 8], [50, 14], [57, 6], [61, 26], [48, 37]], c.dark);
+    stroke(ctx, [[40, 33], [43, 9]], 2, c.main);
+    stroke(ctx, [[44, 34], [50, 14]], 2, c.main);
+    stroke(ctx, [[48, 35], [57, 7]], 2, c.main);
+  } else {
+    // Rocky ridge instead of wings
+    for (const [x, y] of [[34, 32], [40, 31], [46, 33], [51, 37]]) poly(ctx, [[x - 4, y + 3], [x, y - 6], [x + 4, y + 3]], c.dark);
+  }
   // Tail
   stroke(ctx, [[46, 47], [56, 50], [61, 44], [59, 35]], 6, c.main);
   poly(ctx, [[55, 35], [59, 26], [63, 35]], c.dark);
@@ -178,7 +256,7 @@ export function dragonSprite(dragon) {
   normal.width = normal.height = size;
   const ctx = normal.getContext('2d');
   if (dragon.shape === 'serpent') drawSerpent(ctx, c, dragon.fins);
-  else drawWinged(ctx, c);
+  else drawWinged(ctx, c, dragon.wings !== false);
   pixelate(ctx, size, [c.main, c.light, c.dark, HORN]);
   drawFace(ctx, c, dragon.shape);
 
@@ -199,14 +277,16 @@ export function dragonSprite(dragon) {
 
 // Uncaught dragons show up more often so he can fill his Dragon Book.
 export function pickWildDragon(area, caught) {
-  const pool = DRAGONS.filter((d) => d.area === area);
+  const pool = dragonsIn(area);
   const weighted = pool.flatMap((d) => (caught.includes(d.id) ? [d] : [d, d, d]));
   return weighted[Math.floor(Math.random() * weighted.length)];
 }
 
 // The right word plus (count - 1) other dragon words, shuffled.
-export function wordChoices(dragon, count) {
-  const others = [...new Set(DRAGONS.map((d) => d.word))].filter((w) => w !== dragon.word);
+// Wrong words only come from areas he has reached, so tricky words show up later.
+export function wordChoices(dragon, count, areas = AREAS) {
+  const pool = DRAGONS.filter((d) => areas.includes(d.area)).map((d) => d.word);
+  const others = [...new Set(pool)].filter((w) => w !== dragon.word);
   shuffle(others);
   return shuffle([dragon.word, ...others.slice(0, count - 1)]);
 }
