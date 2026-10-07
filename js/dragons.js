@@ -291,11 +291,25 @@ export function pickWildDragon(area, caught) {
   return weighted[Math.floor(Math.random() * weighted.length)];
 }
 
-// The right word plus (count - 1) other dragon words, shuffled.
-// Wrong words only come from areas he has reached, so tricky words show up later.
+// Word pairs that could both describe the same dragon (a fire dragon is hot,
+// but a kid could fairly say "sun" too). These never appear together as choices.
+const TOO_CLOSE = [
+  ['hot', 'sun'], ['hot', 'gold'], ['sun', 'gold'], ['sun', 'rainbow'], ['sun', 'moon'],
+  ['wet', 'ice'], ['wet', 'rainbow'], ['wet', 'mud'],
+  ['mud', 'rock'], ['rock', 'bam'], ['zap', 'bam'],
+  ['rainbow', 'gold'], ['moon', 'silver'], ['moon', 'ice'], ['ice', 'silver'], ['silver', 'gold'],
+];
+
+export function tooClose(a, b) {
+  return TOO_CLOSE.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+}
+
+// The right word plus up to (count - 1) other dragon words, shuffled.
+// Wrong words only come from areas he has reached, so tricky words show up later,
+// and never include a word that could also fit this dragon.
 export function wordChoices(dragon, count, areas = AREAS) {
   const pool = DRAGONS.filter((d) => areas.includes(d.area)).map((d) => d.word);
-  const others = [...new Set(pool)].filter((w) => w !== dragon.word);
+  const others = [...new Set(pool)].filter((w) => w !== dragon.word && !tooClose(w, dragon.word));
   shuffle(others);
   return shuffle([dragon.word, ...others.slice(0, count - 1)]);
 }
