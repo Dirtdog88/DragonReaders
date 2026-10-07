@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Dragon Readers">
+  <meta name="theme-color" content="#2b1d3a">
+  <title>Dragon Readers</title>
+  <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Andika is designed for beginning readers (simple a and g shapes). -->
+  <link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Title screen -->
+    <section id="title-screen" class="screen">
+      <h1 class="logo">Dragon<br>Readers</h1>
+      <div class="title-dragon" aria-hidden="true"></div>
+      <div class="title-buttons">
+        <button id="btn-continue" class="big-btn" hidden>Play</button>
+        <button id="btn-new" class="big-btn">New Game</button>
+      </div>
+    </section>
+
+    <!-- Name entry -->
+    <section id="name-screen" class="screen" hidden>
+      <h2 class="prompt">What is your name?</h2>
+      <div id="name-slots" class="name-slots"></div>
+      <div id="letter-grid" class="letter-grid"></div>
+      <div class="name-actions">
+        <button id="btn-back" class="big-btn small">&#9003; Back</button>
+        <button id="btn-done" class="big-btn small" disabled>Done &#10003;</button>
+      </div>
+    </section>
+
+    <!-- World -->
+    <section id="world-screen" class="screen" hidden>
+      <div class="console">
+        <div class="pad-area left">
+          <div class="dpad" id="dpad">
+            <button class="dpad-btn up" data-dir="up" aria-label="Up"></button>
+            <button class="dpad-btn left" data-dir="left" aria-label="Left"></button>
+            <div class="dpad-center"></div>
+            <button class="dpad-btn right" data-dir="right" aria-label="Right"></button>
+            <button class="dpad-btn down" data-dir="down" aria-label="Down"></button>
+          </div>
+        </div>
+        <div class="screen-frame">
+          <canvas id="game" width="160" height="144"></canvas>
+          <div id="dialogue" class="dialogue" hidden>
+            <p id="dialogue-text"></p>
+            <button id="dialogue-speak" class="speak-btn" aria-label="Hear it">&#128264;</button>
+            <span class="dialogue-next" aria-hidden="true">&#9660;</span>
+          </div>
+        </div>
+        <div class="pad-area right">
+          <button id="btn-a" class="ab-btn" aria-label="A">A</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
