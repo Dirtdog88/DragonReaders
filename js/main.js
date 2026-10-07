@@ -5,6 +5,7 @@ import { loadSave, writeSave, newSave } from './storage.js';
 import { speak } from './speech.js';
 import { pickWildDragon, wordChoices, dragonById, dragonsIn, areaDone, unlockedAreas } from './dragons.js';
 import { createCapture } from './capture.js';
+import { createBook } from './book.js';
 
 const VIEW_W = 160;
 const VIEW_H = 144;
@@ -14,6 +15,8 @@ const ENCOUNTER_CHANCE = 0.1; // per step in tall grass
 const ENCOUNTER_GRACE = 3; // safe steps after an encounter
 const FLASH_MS = 800;
 const WARP_MS = 400; // fade out + in when walking to a new area
+const STREAK_TO_THREE = 5; // first-try catches in a row before a third word appears
+const MISSES_TO_TWO = 2; // catches in a row with a retry before going back to two
 const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
 const $ = (id) => document.getElementById(id);
@@ -116,7 +119,8 @@ const capture = createCapture({
     stat[right ? 'right' : 'wrong']++;
     writeSave(save);
   },
-  onDone({ dragon, caught }) {
+  onDone({ dragon, caught, mistakes }) {
+    if (caught) adjustDifficulty(mistakes === 0);
     if (caught) {
       const wasDone = areaDone(dragon.area, save.caught);
       if (!save.caught.includes(dragon.id)) save.caught.push(dragon.id);
@@ -135,10 +139,33 @@ function beginEncounter(forceId) {
   input.clear();
 }
 
-// How many words to choose from. Step 4 will grow this to 3 as he improves.
-function choiceCount() {
-  return 2;
+// Starts with 2 words. Grows to 3 after a run of first-try catches,
+// and drops back to 2 if he needs retries a couple of times in a row.
+function adjustDifficulty(firstTry) {
+  if (firstTry) {
+    save.streak++;
+    save.missStreak = 0;
+    if (save.streak >= STREAK_TO_THREE) save.choices = 3;
+  } else {
+    save.streak = 0;
+    save.missStreak++;
+    if (save.missStreak >= MISSES_TO_TWO) {
+      save.choices = 2;
+      save.missStreak = 0;
+    }
+  }
+  writeSave(save);
 }
+
+function choiceCount() {
+  return save.choices || 2;
+}
+
+const book = createBook({ getCaught: () => save.caught, onClose: () => input.clear() });
+$('btn-book').addEventListener('click', () => {
+  if (capture.isActive() || flash || warp || dialogue) return;
+  book.open();
+});
 
 function startWorld() {
   map = MAPS[save.map] || MAPS.bracken;
@@ -225,7 +252,7 @@ $('dialogue-speak').addEventListener('pointerdown', (e) => {
 });
 
 function update(dt) {
-  if (capture.isActive()) return;
+  if (capture.isActive() || book.isOpen()) return;
   if (flash) {
     flash.t += dt;
     if (flash.t >= FLASH_MS) {

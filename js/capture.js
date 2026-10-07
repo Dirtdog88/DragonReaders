@@ -360,6 +360,7 @@ export function createCapture({ onDone, onAnswer }) {
     };
     wordsEl.innerHTML = '';
     wordsEl.classList.remove('shown');
+    wordsEl.classList.toggle('three', choices.length >= 3);
     for (const word of choices) {
       const b = document.createElement('button');
       b.className = 'word-btn';

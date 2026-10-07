@@ -247,7 +247,7 @@ function drawFace(ctx, c, shape) {
 
 const cache = new Map();
 
-// Returns { normal, white } canvases. `white` is a silhouette used for the catch flash.
+// Returns { normal, white, dark } canvases. `white` is a silhouette used for the catch flash.
 export function dragonSprite(dragon) {
   if (cache.has(dragon.id)) return cache.get(dragon.id);
   const size = DRAGON_SIZE;
@@ -268,7 +268,16 @@ export function dragonSprite(dragon) {
   w.fillStyle = '#ffffff';
   w.fillRect(0, 0, size, size);
 
-  const out = { normal, white };
+  // Dark shadow for dragons not caught yet.
+  const dark = document.createElement('canvas');
+  dark.width = dark.height = size;
+  const k = dark.getContext('2d');
+  k.drawImage(normal, 0, 0);
+  k.globalCompositeOperation = 'source-in';
+  k.fillStyle = '#120c1a';
+  k.fillRect(0, 0, size, size);
+
+  const out = { normal, white, dark };
   cache.set(dragon.id, out);
   return out;
 }

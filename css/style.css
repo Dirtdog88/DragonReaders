@@ -319,3 +319,107 @@ button {
 #result-canvas { width: 192px; height: 192px; image-rendering: pixelated; }
 .result-text { margin: 0; font-size: clamp(40px, 6vw, 64px); font-weight: 700; }
 .result-type { margin: 0 0 12px; font-size: clamp(22px, 3vw, 30px); color: #6d5a80; }
+
+/* ---------- Right-side buttons ---------- */
+.right-buttons { display: flex; flex-direction: column; align-items: center; gap: 28px; }
+.book-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  background: var(--gold);
+  box-shadow: 0 5px 0 var(--gold-dark);
+  font-size: 36px;
+}
+.book-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--gold-dark); }
+
+/* Three word choices: a little smaller so they fit side by side */
+.capture-words { flex-wrap: wrap; justify-content: center; }
+.capture-words.three { gap: clamp(12px, 2.5vw, 28px); }
+.capture-words.three .word-btn {
+  font-size: clamp(44px, 7vw, 90px);
+  min-width: clamp(130px, 22vw, 260px);
+  padding: 16px 22px 22px;
+}
+
+/* ---------- Dragon Book ---------- */
+.book {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  padding: 16px clamp(16px, 3vw, 40px);
+  gap: 12px;
+}
+.book[hidden] { display: none; }
+.book-head { display: flex; align-items: center; justify-content: space-between; }
+.book-head h2 { margin: 0; font-size: clamp(30px, 5vw, 48px); color: var(--gold); }
+.book-count { font-size: 0.6em; color: var(--paper); margin-left: 12px; }
+.close-btn {
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 28px;
+  font-weight: 700;
+}
+.book-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: clamp(8px, 1.5vw, 16px);
+  align-content: center;
+  overflow-y: auto;
+}
+.book-cell {
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 16px;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 5px 0 #c9bfa3;
+}
+.book-cell.unknown { background: #4a3a5c; color: var(--paper); box-shadow: none; }
+.book-cell canvas { width: 100%; max-width: 110px; aspect-ratio: 1; image-rendering: pixelated; }
+.book-cell span { font-size: clamp(16px, 2.2vw, 24px); font-weight: 700; }
+.book-detail {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(29, 20, 38, 0.7);
+}
+.book-detail[hidden] { display: none; }
+.detail-card {
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 24px;
+  padding: 24px 48px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  animation: pop 0.3s ease-out;
+}
+#detail-canvas { width: 224px; height: 224px; image-rendering: pixelated; }
+.detail-name { margin: 0; font-size: clamp(40px, 6vw, 60px); font-weight: 700; }
+.detail-type { margin: 0; font-size: clamp(20px, 3vw, 28px); color: #6d5a80; }
+.detail-word-row { display: flex; align-items: center; gap: 16px; margin: 8px 0 16px; }
+.detail-word {
+  margin: 0;
+  font-size: clamp(64px, 10vw, 110px);
+  font-weight: 700;
+  line-height: 1;
+  padding: 8px 28px 16px;
+  border: 4px dashed var(--gold-dark);
+  border-radius: 20px;
+}
+.speak-btn.big { position: static; width: 72px; height: 72px; font-size: 36px; }
+
+@media (orientation: portrait) {
+  .book-grid { grid-template-columns: repeat(4, 1fr); }
+}

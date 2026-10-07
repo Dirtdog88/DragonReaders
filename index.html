@@ -60,7 +60,31 @@
           </div>
         </div>
         <div class="pad-area right">
-          <button id="btn-a" class="ab-btn" aria-label="A">A</button>
+          <div class="right-buttons">
+            <button id="btn-a" class="ab-btn" aria-label="A">A</button>
+            <button id="btn-book" class="book-btn" aria-label="Dragon Book">&#128214;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dragon Book: every dragon he has caught -->
+      <div id="book" class="book" hidden>
+        <div class="book-head">
+          <h2>Dragon Book <span id="book-count" class="book-count"></span></h2>
+          <button id="book-close" class="close-btn" aria-label="Close">&#10005;</button>
+        </div>
+        <div id="book-grid" class="book-grid"></div>
+        <div id="book-detail" class="book-detail" hidden>
+          <div class="detail-card">
+            <canvas id="detail-canvas" width="64" height="64"></canvas>
+            <p id="detail-name" class="detail-name"></p>
+            <p id="detail-type" class="detail-type"></p>
+            <div class="detail-word-row">
+              <p id="detail-word" class="detail-word"></p>
+              <button id="detail-speak" class="speak-btn big" aria-label="Hear it">&#128264;</button>
+            </div>
+            <button id="detail-close" class="big-btn small">OK</button>
+          </div>
         </div>
       </div>
 
