@@ -9,6 +9,7 @@ export const SOLID = new Set(['T', '~', '#', 'B', 'H', 'D', 'R']);
 
 export const MAPS = {
   bracken: {
+    id: 'bracken',
     name: 'Bracken Castle',
     rows: [
       'TTTTTTTTTTTTTTTTTTTTTTTT',

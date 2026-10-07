@@ -63,6 +63,23 @@
           <button id="btn-a" class="ab-btn" aria-label="A">A</button>
         </div>
       </div>
+
+      <!-- Capture: read the word that matches the dragon -->
+      <div id="capture" class="capture" hidden>
+        <div class="capture-stage">
+          <canvas id="capture-canvas" width="128" height="96"></canvas>
+          <button id="capture-run" class="run-btn" aria-label="Run away">&#127939; Run</button>
+        </div>
+        <div id="capture-words" class="capture-words"></div>
+        <div id="capture-result" class="capture-result" hidden>
+          <div class="result-card">
+            <canvas id="result-canvas" width="64" height="64"></canvas>
+            <p id="result-text" class="result-text"></p>
+            <p id="result-type" class="result-type"></p>
+            <button id="result-ok" class="big-btn">OK</button>
+          </div>
+        </div>
+      </div>
     </section>
   </div>
 

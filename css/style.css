@@ -234,3 +234,88 @@ button {
   .pad-area.left { grid-column: 1; grid-row: 2; }
   .pad-area.right { grid-column: 2; grid-row: 2; }
 }
+
+/* ---------- Capture ---------- */
+.capture {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(16px, 3vh, 32px);
+  padding: 16px;
+}
+.capture[hidden] { display: none; }
+.capture-stage { position: relative; }
+#capture-canvas {
+  display: block;
+  width: min(94vw, calc(60vh * 4 / 3));
+  aspect-ratio: 4 / 3;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  border: 8px solid var(--ink);
+  border-radius: 12px;
+}
+.run-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 20px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: rgba(29, 20, 38, 0.75);
+  color: var(--paper);
+}
+.capture-words {
+  display: flex;
+  gap: clamp(16px, 4vw, 48px);
+  visibility: hidden;
+}
+.capture-words.shown { visibility: visible; }
+.word-btn {
+  /* Lowercase words in a big, clear font: what beginning readers see in books. */
+  font-size: clamp(56px, 10vw, 110px);
+  font-weight: 700;
+  line-height: 1;
+  min-width: clamp(160px, 26vw, 300px);
+  padding: 18px 32px 26px;
+  border-radius: 24px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 8px 0 #c9bfa3;
+  transition: opacity 0.3s, transform 0.3s, background 0.2s;
+}
+.word-btn:active { transform: translateY(4px); box-shadow: 0 4px 0 #c9bfa3; }
+.word-btn.wrong { opacity: 0.2; transform: scale(0.85); }
+.word-btn.right { background: var(--green); color: #fff; box-shadow: 0 8px 0 #2e7d32; }
+.word-btn.hint { animation: pulse 0.9s ease-in-out infinite; }
+@keyframes pulse {
+  50% { transform: scale(1.08); box-shadow: 0 8px 0 #c9bfa3, 0 0 0 10px var(--gold); }
+}
+.capture-result {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(29, 20, 38, 0.6);
+}
+.capture-result[hidden] { display: none; }
+.result-card {
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 24px;
+  padding: 24px 40px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: pop 0.35s ease-out;
+}
+@keyframes pop { from { transform: scale(0.6); opacity: 0; } }
+#result-canvas { width: 192px; height: 192px; image-rendering: pixelated; }
+.result-text { margin: 0; font-size: clamp(40px, 6vw, 64px); font-weight: 700; }
+.result-type { margin: 0 0 12px; font-size: clamp(22px, 3vw, 30px); color: #6d5a80; }

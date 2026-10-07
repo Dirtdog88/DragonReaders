@@ -3,11 +3,16 @@ import { MAPS, SOLID, tileAt } from './maps.js';
 import { createInput } from './input.js';
 import { loadSave, writeSave, newSave } from './storage.js';
 import { speak } from './speech.js';
+import { pickWildDragon, wordChoices, dragonById } from './dragons.js';
+import { createCapture } from './capture.js';
 
 const VIEW_W = 160;
 const VIEW_H = 144;
 const STEP_MS = 200; // time to walk one tile
 const MAX_NAME = 8;
+const ENCOUNTER_CHANCE = 0.1; // per step in tall grass
+const ENCOUNTER_GRACE = 3; // safe steps after an encounter
+const FLASH_MS = 800;
 const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
 const $ = (id) => document.getElementById(id);
@@ -100,6 +105,35 @@ ctx.imageSmoothingEnabled = false;
 let map = null;
 let player = null;
 let dialogue = null; // { lines, i }
+let flash = null; // { t } while the screen flashes before an encounter
+let stepsSinceEncounter = 0;
+
+const capture = createCapture({
+  onAnswer(word, right) {
+    const stat = (save.words[word] ??= { right: 0, wrong: 0 });
+    stat[right ? 'right' : 'wrong']++;
+    writeSave(save);
+  },
+  onDone({ dragon, caught }) {
+    if (caught) {
+      if (!save.caught.includes(dragon.id)) save.caught.push(dragon.id);
+      save.catches[dragon.id] = (save.catches[dragon.id] || 0) + 1;
+      writeSave(save);
+    }
+    stepsSinceEncounter = 0;
+    input.clear();
+  },
+});
+
+function beginEncounter(forceId) {
+  flash = { t: 0, forceId };
+  input.clear();
+}
+
+// How many words to choose from. Step 4 will grow this to 3 as he improves.
+function choiceCount() {
+  return 2;
+}
 
 function startWorld() {
   map = MAPS[save.map] || MAPS.bracken;
@@ -163,6 +197,16 @@ $('dialogue-speak').addEventListener('pointerdown', (e) => {
 });
 
 function update(dt) {
+  if (capture.isActive()) return;
+  if (flash) {
+    flash.t += dt;
+    if (flash.t >= FLASH_MS) {
+      const dragon = dragonById(flash.forceId) || pickWildDragon(map.id, save.caught);
+      flash = null;
+      capture.start(dragon, wordChoices(dragon, choiceCount()));
+    }
+    return;
+  }
   if (dialogue) {
     if (input.takeA()) advanceDialogue();
     return;
@@ -177,6 +221,13 @@ function update(dt) {
     save.y = player.y;
     save.dir = player.dir;
     writeSave(save);
+    if (tileAt(map, player.x, player.y) === 'G') {
+      stepsSinceEncounter++;
+      if (stepsSinceEncounter > ENCOUNTER_GRACE && Math.random() < ENCOUNTER_CHANCE) {
+        beginEncounter();
+        return;
+      }
+    }
     // Fall through so holding a direction keeps walking without a pause.
   }
 
@@ -244,6 +295,20 @@ function render(time) {
   if (standTile === 'G') {
     ctx.drawImage(tiles.G[frame], 0, 11, TILE, 5, px - camX, py - camY + 11, TILE, 5);
   }
+
+  // Encounter flash: blink white, then wipe to black.
+  if (flash) {
+    if (flash.t < FLASH_MS - 250) {
+      if (Math.floor(flash.t / 110) % 2 === 0) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+      }
+    } else {
+      const k = (flash.t - (FLASH_MS - 250)) / 250;
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, VIEW_W, Math.ceil(VIEW_H * k));
+    }
+  }
 }
 
 // Fit the pixel screen as large as possible between the controls.
@@ -261,11 +326,16 @@ let last = performance.now();
 function loop(now) {
   const dt = Math.min(50, now - last);
   last = now;
-  if (currentScreen === 'world' && map) {
+  if (currentScreen === 'world' && map && !capture.isActive()) {
     update(dt);
-    render(now);
+    if (!capture.isActive()) render(now);
   }
   requestAnimationFrame(loop);
+}
+
+// Testing helpers: open the game with ?debug in the address.
+if (location.search.includes('debug')) {
+  window.__dr = { encounter: beginEncounter, save: () => save };
 }
 
 setupTitle();

@@ -6,7 +6,12 @@ const KEY = 'dragon-readers-save-v1';
 export function loadSave() {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const save = JSON.parse(raw);
+    save.caught ??= [];
+    save.catches ??= {};
+    save.words ??= {};
+    return save;
   } catch {
     return null;
   }
@@ -27,7 +32,9 @@ export function newSave(name) {
     x: null,
     y: null,
     dir: 'down',
-    caught: [],
+    caught: [],   // dragon ids, in the order he caught them
+    catches: {},  // dragon id -> times caught
+    words: {},    // word -> { right, wrong } for tracking reading progress
     createdAt: new Date().toISOString(),
   };
 }
