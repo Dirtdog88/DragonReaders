@@ -113,7 +113,7 @@ const EFFECTS = {
       }
     },
   },
-  bam: {
+  boom: {
     theme: 'storm',
     back(ctx) {
       ctx.fillStyle = '#4b5064';

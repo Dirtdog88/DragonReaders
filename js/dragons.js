@@ -38,7 +38,7 @@ export const DRAGONS = [
   },
   {
     id: 'neru', name: 'Neru', type: 'Thunder', book: 8, master: 'Eko',
-    word: 'bam', area: 'forest', effect: 'bam', shape: 'winged',
+    word: 'boom', area: 'forest', effect: 'boom', shape: 'winged',
     colors: { main: '#5a5f7a', light: '#a9aec8', dark: '#33364a', accent: '#ffe14a' },
   },
   {
@@ -296,7 +296,7 @@ export function pickWildDragon(area, caught) {
 const TOO_CLOSE = [
   ['hot', 'sun'], ['hot', 'gold'], ['sun', 'gold'], ['sun', 'rainbow'], ['sun', 'moon'],
   ['wet', 'ice'], ['wet', 'rainbow'], ['wet', 'mud'],
-  ['mud', 'rock'], ['rock', 'bam'], ['zap', 'bam'],
+  ['mud', 'rock'], ['rock', 'boom'], ['zap', 'boom'], ['zap', 'wet'], ['boom', 'wet'],
   ['rainbow', 'gold'], ['moon', 'silver'], ['moon', 'ice'], ['ice', 'silver'], ['silver', 'gold'],
 ];
 
