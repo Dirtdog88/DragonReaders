@@ -205,7 +205,7 @@ function drawSerpent(ctx, c, fins) {
 }
 
 // Snap every pixel to the palette (removes blurry edges), then add a dark outline.
-function pixelate(ctx, size, palette) {
+export function pixelate(ctx, size, palette) {
   const img = ctx.getImageData(0, 0, size, size);
   const d = img.data;
   const pal = palette.map(hexToRgb);

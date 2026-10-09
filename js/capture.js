@@ -1,7 +1,7 @@
 // The capture screen: a wild dragon appears with a visual clue, and the player
 // taps the word that matches it.
 
-import { dragonSprite, DRAGON_SIZE } from './dragons.js';
+import { dragonSprite, DRAGON_SIZE, pixelate } from './dragons.js';
 import { speak } from './speech.js';
 
 const W = 128;
@@ -13,6 +13,12 @@ const GEM_X = DX + DRAGON_SIZE / 2;
 const GEM_Y = 84;
 const APPEAR_MS = 450;
 const CATCH_MS = 1400;
+// Battle against Maldred
+const HIT_MS = 1300; // beam, impact, then the next dragon
+const DEFEAT_MS = 1600;
+const MX = 2; // where Maldred stands (left side, facing the dragon)
+const MY = 30;
+const M_SIZE = 48;
 
 const $ = (id) => document.getElementById(id);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -285,6 +291,7 @@ const THEMES = {
   storm: { sky: ['#7d8597', '#8e96a8', '#a0a8b8'], ground: '#6fa65a', spot: '#5d9149' },
   night: { sky: ['#141a3a', '#1c2450', '#263066'], ground: '#3d6b3a', spot: '#335c31' },
   cave: { sky: ['#2a2433', '#332b3f', '#3d344b'], ground: '#4a4458', spot: '#5a5368' },
+  tower: { sky: ['#1a0f24', '#22142e', '#2b1a3a'], ground: '#3a2a4a', spot: '#4a3660' },
 };
 
 function drawBackground(ctx, theme) {
@@ -330,6 +337,98 @@ function drawGem(ctx, x, y, t) {
   });
 }
 
+// ---------------------------------------------------------------- Maldred
+
+let maldredCache = null;
+
+// The evil wizard, facing right toward the dragon. Drawn like the dragons:
+// simple shapes snapped to a palette with a dark outline.
+function maldredSprite() {
+  if (maldredCache) return maldredCache;
+  const c = document.createElement('canvas');
+  c.width = c.height = M_SIZE;
+  const x = c.getContext('2d');
+  const shape = (pts, col) => {
+    x.fillStyle = col;
+    x.beginPath();
+    pts.forEach(([px, py], i) => (i ? x.lineTo(px, py) : x.moveTo(px, py)));
+    x.closePath();
+    x.fill();
+  };
+  const oval = (cx, cy, rx, ry, col) => {
+    x.fillStyle = col;
+    x.beginPath();
+    x.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    x.fill();
+  };
+  const ROBE = '#3a1d4a';
+  const HAT = '#24102e';
+  const RED = '#b3202a';
+  const SKIN = '#9fb59a';
+  const WOOD = '#5e3b1a';
+  const ORB = '#d62fbf';
+  x.fillStyle = WOOD;
+  x.fillRect(37, 12, 3, 35); // staff
+  shape([[15, 21], [29, 21], [37, 46], [7, 46]], ROBE);
+  shape([[7, 42], [37, 42], [37, 46], [7, 46]], RED);
+  x.fillStyle = RED;
+  x.fillRect(14, 31, 17, 2); // belt
+  oval(32, 28, 6, 3, ROBE); // arm reaching for the staff
+  oval(37, 28, 2.5, 2.5, SKIN);
+  oval(22, 18, 5.5, 5.5, SKIN); // face
+  oval(22, 14, 13, 2.5, HAT); // brim
+  shape([[12, 14], [32, 14], [25, 4], [30, 0], [20, 3]], HAT); // bent pointy hat
+  oval(38, 9, 4.5, 4.5, ORB);
+  pixelate(x, M_SIZE, [ROBE, HAT, RED, SKIN, WOOD, ORB]);
+  x.fillStyle = '#ff2a2a';
+  x.fillRect(20, 17, 2, 1); // glowing eyes
+  x.fillRect(24, 17, 2, 1);
+  x.fillStyle = '#1d1426';
+  x.fillRect(20, 21, 5, 1); // frown
+  x.fillStyle = '#ffffff';
+  x.fillRect(37, 7, 1, 1); // orb shine
+
+  const white = document.createElement('canvas');
+  white.width = white.height = M_SIZE;
+  const w = white.getContext('2d');
+  w.drawImage(c, 0, 0);
+  w.globalCompositeOperation = 'source-in';
+  w.fillStyle = '#ffffff';
+  w.fillRect(0, 0, M_SIZE, M_SIZE);
+  maldredCache = { normal: c, white };
+  return maldredCache;
+}
+
+function drawHearts(ctx, hearts, max) {
+  const rows = ['.kk.kk.', 'kRRkRRk', 'kRRRRRk', '.kRRRk.', '..kRk..', '...k...'];
+  for (let i = 0; i < max; i++) {
+    const full = i < hearts;
+    rows.forEach((row, ry) => [...row].forEach((ch, rx) => {
+      if (ch === '.') return;
+      ctx.fillStyle = ch === 'k' ? '#1d1426' : full ? '#e8364a' : '#4a3a5c';
+      ctx.fillRect(4 + i * 9 + rx, 4 + ry, 1, 1);
+    }));
+  }
+}
+
+// Gold trophy for the victory card (64x64).
+function drawTrophy(ctx) {
+  const R = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); };
+  ctx.clearRect(0, 0, 64, 64);
+  R(14, 6, 36, 4, '#1d1426');
+  R(16, 8, 32, 22, '#1d1426');
+  R(18, 8, 28, 20, '#f5c542');
+  R(20, 10, 6, 14, '#fff0a0');
+  R(6, 10, 10, 3, '#1d1426'); R(6, 10, 3, 12, '#1d1426'); R(6, 20, 12, 3, '#1d1426'); // handles
+  R(48, 10, 10, 3, '#1d1426'); R(55, 10, 3, 12, '#1d1426'); R(46, 20, 12, 3, '#1d1426');
+  R(20, 28, 24, 4, '#1d1426'); R(22, 28, 20, 3, '#d9a520');
+  R(28, 32, 8, 12, '#1d1426'); R(30, 32, 4, 12, '#d9a520');
+  R(18, 44, 28, 4, '#1d1426'); R(20, 44, 24, 3, '#f5c542');
+  R(14, 48, 36, 10, '#1d1426'); R(16, 50, 32, 6, '#7a2f1f');
+  R(26, 14, 12, 8, '#d9a520'); // star-ish emblem
+  R(30, 12, 4, 12, '#d9a520');
+}
+
 // ---------------------------------------------------------------- Screen
 
 export function createCapture({ onDone, onAnswer }) {
@@ -344,13 +443,18 @@ export function createCapture({ onDone, onAnswer }) {
   let raf = 0;
   let last = 0;
 
-  function start(dragon, choices, answer) {
+  // battle = { hearts, max } turns this into a round against Maldred.
+  function start(dragon, choices, answer, battle = null) {
+    const fxTheme = (EFFECTS[dragon.effect] || {}).theme;
     s = {
       dragon,
       answer,
+      battle: battle ? { ...battle } : null,
+      hitApplied: false,
       sprite: dragonSprite(dragon),
       effect: EFFECTS[dragon.effect] || {},
-      theme: (EFFECTS[dragon.effect] || {}).theme || (dragon.area === 'cave' ? 'cave' : 'day'),
+      // Battles always happen inside Maldred's dark tower.
+      theme: battle ? 'tower' : fxTheme || (dragon.area === 'cave' ? 'cave' : 'day'),
       phase: 'appear',
       t: 0,
       clock: 0,
@@ -388,7 +492,7 @@ export function createCapture({ onDone, onAnswer }) {
       btn.classList.add('right');
       wordsEl.querySelectorAll('.word-btn').forEach((b) => { b.disabled = true; });
       speak(word);
-      s.phase = 'catch';
+      s.phase = s.battle ? 'hit' : 'catch';
       s.t = 0;
     } else {
       // Gentle retry: fade the wrong word, say and highlight the right one.
@@ -413,10 +517,23 @@ export function createCapture({ onDone, onAnswer }) {
     speak(`You got ${s.dragon.name}!`);
   }
 
+  function showVictory() {
+    s.phase = 'victory';
+    drawTrophy($('result-canvas').getContext('2d'));
+    $('result-text').textContent = 'You beat Maldred!';
+    $('result-type').textContent = 'You are a Dragon Master!';
+    resultEl.hidden = false;
+    speak('You beat Maldred!');
+  }
+
   function finish(caught) {
     cancelAnimationFrame(raf);
     el.hidden = true;
     const result = { dragon: s.dragon, caught, mistakes: s.mistakes };
+    if (s.battle) {
+      result.caught = false;
+      result.battle = { hearts: s.battle.hearts, won: s.phase === 'victory', fled: s.phase === 'appear' || s.phase === 'choose' };
+    }
     s = null;
     onDone(result);
   }
@@ -425,7 +542,7 @@ export function createCapture({ onDone, onAnswer }) {
     if (s && (s.phase === 'appear' || s.phase === 'choose')) finish(false);
   });
   $('result-ok').addEventListener('click', () => {
-    if (s && s.phase === 'result') finish(true);
+    if (s && (s.phase === 'result' || s.phase === 'victory')) finish(true);
   });
 
   function update(dt) {
@@ -442,11 +559,22 @@ export function createCapture({ onDone, onAnswer }) {
       wordsEl.classList.add('shown');
     }
     if (s.phase === 'catch' && s.t >= CATCH_MS) showResult();
+    if (s.phase === 'hit') {
+      if (!s.hitApplied && s.t >= 500) {
+        s.hitApplied = true;
+        s.battle.hearts = Math.max(0, s.battle.hearts - 1);
+      }
+      if (s.t >= HIT_MS) {
+        if (s.battle.hearts > 0) finish(false);
+        else { s.phase = 'defeat'; s.t = 0; }
+      }
+    }
+    if (s && s.phase === 'defeat' && s.t >= DEFEAT_MS) showVictory();
   }
 
   function stepParticles(dt) {
     const fx = s.effect;
-    const caughtAlready = s.phase === 'catch' || s.phase === 'result';
+    const caughtAlready = ['catch', 'result', 'defeat', 'victory'].includes(s.phase);
     if (fx.every && !caughtAlready) {
       s.spawnTimer += dt;
       while (s.spawnTimer >= fx.every) {
@@ -491,7 +619,9 @@ export function createCapture({ onDone, onAnswer }) {
       y += sy;
     }
 
-    if (s.phase === 'appear' || s.phase === 'choose') {
+    if (s.battle) drawMaldred(t, clock);
+
+    if (s.phase === 'appear' || s.phase === 'choose' || s.phase === 'hit' || s.phase === 'defeat' || s.phase === 'victory') {
       ctx.drawImage(s.sprite.normal, x, y);
     } else if (s.phase === 'catch') {
       if (t < 500) {
@@ -519,6 +649,38 @@ export function createCapture({ onDone, onAnswer }) {
 
     s.effect.front?.(ctx, clock);
 
+    if (s.battle) {
+      if (s.phase === 'hit' && t < 520) {
+        // The dragon's power shoots from its mouth to Maldred.
+        const k = Math.min(1, t / 350);
+        const sx = DX + 4;
+        const sy = DY + 24;
+        const ex = sx + (MX + 26 - sx) * k;
+        const ey = sy + (MY + 22 - sy) * k;
+        for (const [wd, col] of [[7, '#1d1426'], [5, s.dragon.colors.main], [2, '#ffffff']]) {
+          ctx.strokeStyle = col;
+          ctx.lineWidth = wd;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(sx, sy);
+          ctx.lineTo(ex, ey);
+          ctx.stroke();
+        }
+      }
+      if (s.phase === 'hit' && t >= 450 && t < 1000) {
+        // Impact burst in the dragon's colors
+        const k = (t - 450) / 550;
+        const cols = [s.dragon.colors.main, s.dragon.colors.light, '#ffffff'];
+        for (let i = 0; i < 12; i++) {
+          const a = (i / 12) * Math.PI * 2;
+          const r = 4 + k * 20;
+          ctx.fillStyle = cols[i % 3];
+          ctx.fillRect(Math.round(MX + 24 + Math.cos(a) * r), Math.round(MY + 22 + Math.sin(a) * r), 3, 3);
+        }
+      }
+      drawHearts(ctx, s.battle.hearts, s.battle.max);
+    }
+
     if (s.phase === 'catch' || s.phase === 'result') {
       drawGem(ctx, GEM_X, GEM_Y - 6, clock);
       if (t >= 1000) {
@@ -532,6 +694,42 @@ export function createCapture({ onDone, onAnswer }) {
     }
   }
 
+  function drawMaldred(t, clock) {
+    const m = maldredSprite();
+    let mx = MX;
+    let my = MY + Math.round(Math.sin(clock / 400) * 1.5); // floats a little
+    if (s.wiggle > 0) my -= Math.round(Math.abs(Math.sin(s.wiggle * 0.05)) * 4); // laughs at a wrong word
+    if (s.phase === 'hit' && t >= 450 && t < 1000) {
+      mx += Math.round(Math.sin(t * 0.2) * 3);
+      ctx.drawImage(Math.floor(t / 70) % 2 ? m.white : m.normal, mx, my);
+      return;
+    }
+    if (s.phase === 'defeat' || s.phase === 'victory') {
+      // Spins away in a puff of purple smoke.
+      const k = s.phase === 'victory' ? 1 : Math.min(1, t / (DEFEAT_MS - 300));
+      const size = Math.round(M_SIZE * (1 - k));
+      if (size > 1) ctx.drawImage(Math.floor(t / 90) % 2 ? m.white : m.normal, mx + (M_SIZE - size) / 2, my + (M_SIZE - size) / 2, size, size);
+      ctx.fillStyle = '#9b5de5';
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2 + clock / 500;
+        const r = 6 + k * 22;
+        ctx.beginPath();
+        ctx.arc(MX + 24 + Math.cos(a) * r, MY + 24 + Math.sin(a) * r * 0.8, 3 + k * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      return;
+    }
+    ctx.drawImage(m.normal, mx, my);
+    if (s.phase === 'appear' || s.phase === 'choose') {
+      // Magic shield until the right word breaks it
+      ctx.strokeStyle = `rgba(214, 47, 191, ${0.45 + Math.sin(clock / 200) * 0.2})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(mx + 24, my + 26, 22, 26, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
   function loop(now) {
     if (!s) return;
     const dt = Math.min(50, now - last);
@@ -542,5 +740,5 @@ export function createCapture({ onDone, onAnswer }) {
     raf = requestAnimationFrame(loop);
   }
 
-  return { start, isActive: () => !!s };
+  return { start, isActive: () => !!s, answer: () => s?.answer };
 }

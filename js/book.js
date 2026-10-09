@@ -6,7 +6,7 @@ import { speak } from './speech.js';
 
 const $ = (id) => document.getElementById(id);
 
-export function createBook({ getCaught, getMode, onClose }) {
+export function createBook({ getCaught, getMode, getWins, onClose }) {
   const el = $('book');
   const grid = $('book-grid');
   const detail = $('book-detail');
@@ -15,7 +15,8 @@ export function createBook({ getCaught, getMode, onClose }) {
   function open() {
     const caught = getCaught();
     const ordered = [...DRAGONS].sort((a, b) => a.book - b.book);
-    $('book-count').textContent = `${caught.length} / ${DRAGONS.length}`;
+    const wins = getWins?.() || 0;
+    $('book-count').textContent = `${caught.length} / ${DRAGONS.length}${wins ? `  \u{1F3C6} ${wins}` : ''}`;
     grid.innerHTML = '';
     for (const d of ordered) {
       const has = caught.includes(d.id);

@@ -1,5 +1,5 @@
 import { TILE, buildPlayerSprites, buildNpcSprites, buildTiles } from './sprites.js';
-import { MAPS, SOLID, ENCOUNTER_TILES, AREA_DONE_LINES, tileAt } from './maps.js';
+import { MAPS, SOLID, ENCOUNTER_TILES, AREA_DONE_LINES, VICTORY_LINES, tileAt } from './maps.js';
 import { createInput } from './input.js';
 import { loadSave, writeSave, newSave, loadMode, writeMode } from './storage.js';
 import { speak } from './speech.js';
@@ -17,6 +17,7 @@ const FLASH_MS = 800;
 const WARP_MS = 400; // fade out + in when walking to a new area
 const STREAK_TO_THREE = 5; // first-try catches in a row before a third word appears
 const MISSES_TO_TWO = 2; // catches in a row with a retry before going back to two
+const MALDRED_HEARTS = 5;
 const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
 const $ = (id) => document.getElementById(id);
@@ -123,7 +124,8 @@ ctx.imageSmoothingEnabled = false;
 
 let map = null;
 let player = null;
-let dialogue = null; // { lines, i }
+let dialogue = null; // { lines, i, onClose }
+let battle = null; // { hearts, order, i } while fighting Maldred
 let flash = null; // { t } while the screen flashes before an encounter
 let warp = null; // { t, exit, moved } while fading to a new area
 let stepsSinceEncounter = 0;
@@ -134,7 +136,8 @@ const capture = createCapture({
     stat[right ? 'right' : 'wrong']++;
     writeSave(save);
   },
-  onDone({ dragon, caught, mistakes }) {
+  onDone({ dragon, caught, mistakes, battle: round }) {
+    if (round) { battleRoundDone(round); return; }
     if (caught) adjustDifficulty(mistakes === 0);
     if (caught) {
       const wasDone = areaDone(dragon.area, save.caught);
@@ -176,7 +179,7 @@ function choiceCount() {
   return save.choices || 2;
 }
 
-const book = createBook({ getCaught: () => save.caught, getMode: () => mode, onClose: () => input.clear() });
+const book = createBook({ getCaught: () => save.caught, getMode: () => mode, getWins: () => save.maldredWins || 0, onClose: () => input.clear() });
 $('btn-book').addEventListener('click', () => {
   if (capture.isActive() || flash || warp || dialogue) return;
   book.open();
@@ -215,7 +218,41 @@ function npcAt(x, y) {
   return visibleNpcs().find((n) => n.x === x && n.y === y);
 }
 
+// Maldred battle: each round one of his caught dragons attacks. Reading its
+// word breaks Maldred's shield and knocks off a heart. He can't lose.
+function startBattle() {
+  const order = [...save.caught].sort(() => Math.random() - 0.5);
+  battle = { hearts: MALDRED_HEARTS, order, i: 0 };
+  nextBattleRound();
+}
+
+function nextBattleRound() {
+  const dragon = dragonById(battle.order[battle.i % battle.order.length]);
+  battle.i++;
+  const choices = wordChoices(dragon, choiceCount(), unlockedAreas(save.caught), mode);
+  capture.start(dragon, choices, answerFor(dragon, mode), { hearts: battle.hearts, max: MALDRED_HEARTS });
+}
+
+function battleRoundDone(round) {
+  input.clear();
+  if (round.fled) { battle = null; return; }
+  if (round.won) {
+    battle = null;
+    save.maldredWins = (save.maldredWins || 0) + 1;
+    writeSave(save);
+    openDialogue(VICTORY_LINES);
+    return;
+  }
+  battle.hearts = round.hearts;
+  nextBattleRound();
+}
+
 function talkTo(npc) {
+  if (npc.battle) {
+    const lines = save.maldredWins && npc.rematch ? npc.rematch : npc.lines;
+    openDialogue(lines, {}, startBattle);
+    return;
+  }
   const vars = {};
   if (npc.gate) {
     const here = dragonsIn(npc.gate);
@@ -236,16 +273,22 @@ function walkable(x, y) {
   return !SOLID.has(tileAt(map, x, y)) && !npcAt(x, y);
 }
 
-function openDialogue(lines, vars = {}) {
+function openDialogue(lines, vars = {}, onClose = null) {
   const fill = (l) => l.replace(/\{(\w+)\}/g, (m, k) => (k === 'name' ? save.name : vars[k] ?? m));
-  dialogue = { lines: lines.map(fill), i: 0 };
+  dialogue = { lines: lines.map(fill), i: 0, onClose };
   renderDialogue();
 }
 
 function advanceDialogue() {
   if (!dialogue) return;
   dialogue.i++;
-  if (dialogue.i >= dialogue.lines.length) dialogue = null;
+  if (dialogue.i >= dialogue.lines.length) {
+    const done = dialogue.onClose;
+    dialogue = null;
+    renderDialogue();
+    done?.();
+    return;
+  }
   renderDialogue();
 }
 
@@ -370,7 +413,7 @@ function render(time) {
   }
 
   for (const npc of visibleNpcs()) {
-    const s = npcSprites[npc.id];
+    const s = npcSprites[npc.sprite || npc.id];
     if (s) ctx.drawImage(s, npc.x * TILE - camX, npc.y * TILE - camY);
   }
 
@@ -433,6 +476,7 @@ if (location.search.includes('debug')) {
   window.__dr = {
     encounter: beginEncounter,
     save: () => save,
+    answer: () => capture.answer(),
     give(ids) { for (const id of ids) if (!save.caught.includes(id)) save.caught.push(id); writeSave(save); },
     warp(mapId, x, y) { moveTo(mapId, x, y, 'down'); },
   };
