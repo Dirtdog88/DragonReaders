@@ -1,12 +1,12 @@
 // The Dragon Book: all 14 dragons in book order. Caught ones are shown in color
 // and can be tapped to read their word; the rest are dark shadows.
 
-import { DRAGONS, DRAGON_SIZE, dragonSprite } from './dragons.js';
+import { DRAGONS, DRAGON_SIZE, dragonSprite, answerFor } from './dragons.js';
 import { speak } from './speech.js';
 
 const $ = (id) => document.getElementById(id);
 
-export function createBook({ getCaught, onClose }) {
+export function createBook({ getCaught, getMode, onClose }) {
   const el = $('book');
   const grid = $('book-grid');
   const detail = $('book-detail');
@@ -45,11 +45,12 @@ export function createBook({ getCaught, onClose }) {
     ctx.drawImage(dragonSprite(d).normal, 0, 0);
     $('detail-name').textContent = d.name;
     $('detail-type').textContent = `${d.type} Dragon`;
-    $('detail-word').textContent = d.word;
+    current = { ...d, answer: answerFor(d, getMode()) };
+    $('detail-word').textContent = current.answer;
     detail.hidden = false;
   }
 
-  $('detail-speak').addEventListener('click', () => { if (current) speak(current.word); });
+  $('detail-speak').addEventListener('click', () => { if (current) speak(current.answer); });
   $('detail-close').addEventListener('click', () => { detail.hidden = true; current = null; });
   $('book-close').addEventListener('click', () => {
     el.hidden = true;

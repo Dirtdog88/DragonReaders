@@ -1,9 +1,9 @@
 import { TILE, buildPlayerSprites, buildNpcSprites, buildTiles } from './sprites.js';
 import { MAPS, SOLID, ENCOUNTER_TILES, AREA_DONE_LINES, tileAt } from './maps.js';
 import { createInput } from './input.js';
-import { loadSave, writeSave, newSave } from './storage.js';
+import { loadSave, writeSave, newSave, loadMode, writeMode } from './storage.js';
 import { speak } from './speech.js';
-import { pickWildDragon, wordChoices, dragonById, dragonsIn, areaDone, unlockedAreas } from './dragons.js';
+import { pickWildDragon, wordChoices, dragonById, dragonsIn, areaDone, unlockedAreas, answerFor } from './dragons.js';
 import { createCapture } from './capture.js';
 import { createBook } from './book.js';
 
@@ -27,7 +27,8 @@ const npcSprites = buildNpcSprites();
 const tiles = buildTiles();
 const input = createInput();
 
-let save = loadSave();
+let mode = loadMode();
+let save = loadSave(mode);
 let currentScreen = 'title';
 
 function show(name) {
@@ -41,13 +42,27 @@ function show(name) {
 function setupTitle() {
   $('title-screen').querySelector('.title-dragon').style.backgroundImage =
     `url(${playerSprites.down[0].toDataURL()})`;
-  const cont = $('btn-continue');
-  if (save) {
-    cont.hidden = false;
-    cont.textContent = `Play as ${save.name}`;
-  }
-  cont.addEventListener('click', () => startWorld());
+  $('btn-continue').addEventListener('click', () => startWorld());
   $('btn-new').addEventListener('click', () => openNameScreen());
+  document.querySelectorAll('.mode-btn').forEach((b) => b.addEventListener('click', () => {
+    mode = b.dataset.mode;
+    writeMode(mode);
+    save = loadSave(mode);
+    renderTitle();
+  }));
+  renderTitle();
+}
+
+// Each mode has its own saved game, so the Play button follows the selected mode.
+function renderTitle() {
+  document.querySelectorAll('.mode-btn').forEach((b) => {
+    const on = b.dataset.mode === mode;
+    b.classList.toggle('selected', on);
+    b.setAttribute('aria-checked', on);
+  });
+  const cont = $('btn-continue');
+  cont.hidden = !save;
+  if (save) cont.textContent = `Play as ${save.name}`;
 }
 
 // ---------------------------------------------------------------- Name entry
@@ -94,7 +109,7 @@ function setupNameScreen() {
   $('btn-done').addEventListener('click', () => {
     if (!typed) return;
     const name = typed[0] + typed.slice(1).toLowerCase();
-    save = newSave(name);
+    save = newSave(name, mode);
     writeSave(save);
     startWorld();
   });
@@ -161,7 +176,7 @@ function choiceCount() {
   return save.choices || 2;
 }
 
-const book = createBook({ getCaught: () => save.caught, onClose: () => input.clear() });
+const book = createBook({ getCaught: () => save.caught, getMode: () => mode, onClose: () => input.clear() });
 $('btn-book').addEventListener('click', () => {
   if (capture.isActive() || flash || warp || dialogue) return;
   book.open();
@@ -258,7 +273,10 @@ function update(dt) {
     if (flash.t >= FLASH_MS) {
       const dragon = dragonById(flash.forceId) || pickWildDragon(map.id, save.caught);
       flash = null;
-      capture.start(dragon, wordChoices(dragon, choiceCount(), unlockedAreas(save.caught)));
+      if (dragon) {
+        const choices = wordChoices(dragon, choiceCount(), unlockedAreas(save.caught), mode);
+        capture.start(dragon, choices, answerFor(dragon, mode));
+      }
     }
     return;
   }
@@ -293,7 +311,8 @@ function update(dt) {
     }
     if (ENCOUNTER_TILES.has(tileAt(map, player.x, player.y))) {
       stepsSinceEncounter++;
-      if (stepsSinceEncounter > ENCOUNTER_GRACE && Math.random() < ENCOUNTER_CHANCE) {
+      const anyLeft = !areaDone(map.id, save.caught);
+      if (anyLeft && stepsSinceEncounter > ENCOUNTER_GRACE && Math.random() < ENCOUNTER_CHANCE) {
         beginEncounter();
         return;
       }

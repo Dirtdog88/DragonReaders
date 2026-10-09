@@ -344,9 +344,10 @@ export function createCapture({ onDone, onAnswer }) {
   let raf = 0;
   let last = 0;
 
-  function start(dragon, choices) {
+  function start(dragon, choices, answer) {
     s = {
       dragon,
+      answer,
       sprite: dragonSprite(dragon),
       effect: EFFECTS[dragon.effect] || {},
       theme: (EFFECTS[dragon.effect] || {}).theme || (dragon.area === 'cave' ? 'cave' : 'day'),
@@ -380,8 +381,8 @@ export function createCapture({ onDone, onAnswer }) {
 
   function choose(word, btn) {
     if (!s || s.phase !== 'choose') return;
-    const right = word === s.dragon.word;
-    onAnswer?.(s.dragon.word, right);
+    const right = word === s.answer;
+    onAnswer?.(s.answer, right);
     if (right) {
       btn.classList.remove('hint');
       btn.classList.add('right');
@@ -395,8 +396,8 @@ export function createCapture({ onDone, onAnswer }) {
       btn.disabled = true;
       s.wiggle = 500;
       s.mistakes++;
-      wordsEl.querySelector(`[data-word="${s.dragon.word}"]`)?.classList.add('hint');
-      speak(s.dragon.word);
+      wordsEl.querySelector(`[data-word="${s.answer}"]`)?.classList.add('hint');
+      speak(s.answer);
     }
   }
 

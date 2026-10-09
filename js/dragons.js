@@ -7,75 +7,75 @@ export const DRAGON_SIZE = 64;
 export const DRAGONS = [
   {
     id: 'worm', name: 'Worm', type: 'Earth', book: 1, master: 'Drake',
-    word: 'mud', area: 'bracken', effect: 'mud', shape: 'serpent',
+    word: 'mud', color: 'brown', area: 'bracken', effect: 'mud', shape: 'serpent',
     colors: { main: '#8a5a2b', light: '#c49a6c', dark: '#5e3b1a', accent: '#5fd35f' },
   },
   {
     id: 'kepri', name: 'Kepri', type: 'Sun', book: 2, master: 'Ana',
-    word: 'sun', area: 'bracken', effect: 'sun', shape: 'winged',
-    colors: { main: '#f2a900', light: '#ffe58a', dark: '#c46a00', accent: '#ff6b00' },
+    word: 'sun', color: 'orange', area: 'bracken', effect: 'sun', shape: 'winged',
+    colors: { main: '#f08a1c', light: '#ffd08a', dark: '#b85a00', accent: '#ff3b00' },
   },
   {
     id: 'shu', name: 'Shu', type: 'Water', book: 3, master: 'Bo',
-    word: 'wet', area: 'bracken', effect: 'wet', shape: 'serpent', fins: true,
+    word: 'wet', color: 'blue', area: 'bracken', effect: 'wet', shape: 'serpent', fins: true,
     colors: { main: '#2f7fd1', light: '#9fd3ff', dark: '#1d4f8a', accent: '#ffffff' },
   },
   {
     id: 'vulcan', name: 'Vulcan', type: 'Fire', book: 4, master: 'Rori',
-    word: 'hot', area: 'bracken', effect: 'hot', shape: 'winged',
+    word: 'hot', color: 'red', area: 'bracken', effect: 'hot', shape: 'winged',
     colors: { main: '#d62f2f', light: '#ffb36b', dark: '#8e1b1b', accent: '#ffd23f' },
   },
   // ---- Forest
   {
     id: 'zera', name: 'Zera', type: 'Poison', book: 5, master: 'Petra',
-    word: 'gas', area: 'forest', effect: 'gas', shape: 'winged',
+    word: 'gas', color: 'purple', area: 'forest', effect: 'gas', shape: 'winged',
     colors: { main: '#7b3fa0', light: '#c9a0e8', dark: '#4a2266', accent: '#7dff6a' },
   },
   {
     id: 'lalo', name: 'Lalo', type: 'Lightning', book: 7, master: 'Carlos',
-    word: 'zap', area: 'forest', effect: 'zap', shape: 'winged',
+    word: 'zap', color: 'blue', area: 'forest', effect: 'zap', shape: 'winged',
     colors: { main: '#2f4fb0', light: '#8fb0ff', dark: '#1a2a6a', accent: '#ffe14a' },
   },
   {
     id: 'neru', name: 'Neru', type: 'Thunder', book: 8, master: 'Eko',
-    word: 'boom', area: 'forest', effect: 'boom', shape: 'winged',
+    word: 'boom', color: 'gray', area: 'forest', effect: 'boom', shape: 'winged',
     colors: { main: '#5a5f7a', light: '#a9aec8', dark: '#33364a', accent: '#ffe14a' },
   },
   {
     id: 'dayo', name: 'Dayo', type: 'Rainbow', book: 10, master: 'Obi',
-    word: 'rainbow', area: 'forest', effect: 'rainbow', shape: 'winged',
+    word: 'rainbow', color: 'purple', area: 'forest', effect: 'rainbow', shape: 'winged',
     colors: { main: '#9b5de5', light: '#fee440', dark: '#00a6e0', accent: '#f15bb5' },
   },
   {
     id: 'fallyn', name: 'Fallyn', type: 'Spring', book: 14, master: 'Breen',
-    word: 'bud', area: 'forest', effect: 'bud', shape: 'winged',
+    word: 'bud', color: 'green', area: 'forest', effect: 'bud', shape: 'winged',
     colors: { main: '#6cc25a', light: '#d8f5b0', dark: '#3d8a35', accent: '#ff7eb6' },
   },
   // ---- Mountain cave
   {
     id: 'wati', name: 'Wati', type: 'Moon', book: 6, master: 'Heru',
-    word: 'moon', area: 'cave', effect: 'moon', shape: 'winged',
-    colors: { main: '#b8c0dc', light: '#eef2ff', dark: '#6b74a0', accent: '#4060ff' },
+    word: 'moon', color: 'white', area: 'cave', effect: 'moon', shape: 'winged',
+    colors: { main: '#e4e8f4', light: '#ffffff', dark: '#9aa3c4', accent: '#4060ff' },
   },
   {
     id: 'frost', name: 'Frost', type: 'Ice', book: 9, master: 'Mina',
-    word: 'ice', area: 'cave', effect: 'ice', shape: 'winged',
+    word: 'ice', color: 'blue', area: 'cave', effect: 'ice', shape: 'winged',
     colors: { main: '#a8dcf7', light: '#ffffff', dark: '#5fa3d0', accent: '#2f7fd1' },
   },
   {
     id: 'argent', name: 'Argent', type: 'Silver', book: 11, master: 'Jean',
-    word: 'silver', area: 'cave', effect: 'silver', shape: 'winged',
+    word: 'silver', color: 'gray', area: 'cave', effect: 'silver', shape: 'winged',
     colors: { main: '#b9bec8', light: '#eef0f4', dark: '#7a808b', accent: '#3a7bd5' },
   },
   {
     id: 'hema', name: 'Hema', type: 'Gold', book: 12, master: 'Darma',
-    word: 'gold', area: 'cave', effect: 'gold', shape: 'winged',
+    word: 'gold', color: 'yellow', area: 'cave', effect: 'gold', shape: 'winged',
     colors: { main: '#e0b030', light: '#fff0a0', dark: '#a07010', accent: '#d62f2f' },
   },
   {
     id: 'naga', name: 'Naga', type: 'Earthquake', book: 13, master: 'Uri and Zelda',
-    word: 'rock', area: 'cave', effect: 'rock', shape: 'winged', wings: false,
-    colors: { main: '#8a7a66', light: '#c2b49a', dark: '#55493a', accent: '#ff8c1a' },
+    word: 'rock', color: 'brown', area: 'cave', effect: 'rock', shape: 'winged', wings: false,
+    colors: { main: '#8a6444', light: '#c49a74', dark: '#55391f', accent: '#ff8c1a' },
   },
 ];
 
@@ -284,11 +284,17 @@ export function dragonSprite(dragon) {
 
 // ---------------------------------------------------------------- Encounters
 
-// Uncaught dragons show up more often so he can fill his Dragon Book.
+// Only dragons he hasn't caught yet live in the grass. Null when the area is empty.
 export function pickWildDragon(area, caught) {
-  const pool = dragonsIn(area);
-  const weighted = pool.flatMap((d) => (caught.includes(d.id) ? [d] : [d, d, d]));
-  return weighted[Math.floor(Math.random() * weighted.length)];
+  const pool = dragonsIn(area).filter((d) => !caught.includes(d.id));
+  return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+}
+
+// Game modes: read the word that matches the dragon, or pick the dragon's color.
+export const MODES = ['words', 'colors'];
+
+export function answerFor(dragon, mode) {
+  return mode === 'colors' ? dragon.color : dragon.word;
 }
 
 // Word pairs that could both describe the same dragon (a fire dragon is hot,
@@ -298,6 +304,9 @@ const TOO_CLOSE = [
   ['wet', 'ice'], ['wet', 'rainbow'], ['wet', 'mud'],
   ['mud', 'rock'], ['rock', 'boom'], ['zap', 'boom'], ['zap', 'wet'], ['boom', 'wet'],
   ['rainbow', 'gold'], ['moon', 'silver'], ['moon', 'ice'], ['ice', 'silver'], ['silver', 'gold'],
+  // Colors mode: shades that are easy to mix up on these dragons.
+  ['red', 'orange'], ['orange', 'yellow'], ['orange', 'brown'], ['blue', 'purple'],
+  ['gray', 'white'], ['gray', 'blue'], ['gray', 'brown'], ['white', 'blue'],
 ];
 
 export function tooClose(a, b) {
@@ -307,11 +316,12 @@ export function tooClose(a, b) {
 // The right word plus up to (count - 1) other dragon words, shuffled.
 // Wrong words only come from areas he has reached, so tricky words show up later,
 // and never include a word that could also fit this dragon.
-export function wordChoices(dragon, count, areas = AREAS) {
-  const pool = DRAGONS.filter((d) => areas.includes(d.area)).map((d) => d.word);
-  const others = [...new Set(pool)].filter((w) => w !== dragon.word && !tooClose(w, dragon.word));
+export function wordChoices(dragon, count, areas = AREAS, mode = 'words') {
+  const answer = answerFor(dragon, mode);
+  const pool = DRAGONS.filter((d) => areas.includes(d.area)).map((d) => answerFor(d, mode));
+  const others = [...new Set(pool)].filter((w) => w !== answer && !tooClose(w, answer));
   shuffle(others);
-  return shuffle([dragon.word, ...others.slice(0, count - 1)]);
+  return shuffle([answer, ...others.slice(0, count - 1)]);
 }
 
 function shuffle(a) {
