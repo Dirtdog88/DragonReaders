@@ -1,11 +1,12 @@
 import { TILE, buildPlayerSprites, buildNpcSprites, buildTiles } from './sprites.js';
-import { MAPS, SOLID, ENCOUNTER_TILES, AREA_DONE_LINES, VICTORY_LINES, tileAt } from './maps.js';
+import { MAPS, SOLID, ENCOUNTER_TILES, AREA_DONE_LINES, VICTORY_LINES, MALDRED_HINT_LINES, tileAt } from './maps.js';
 import { createInput } from './input.js';
 import { loadSave, writeSave, newSave, loadMode, writeMode } from './storage.js';
 import { speak } from './speech.js';
 import { pickWildDragon, wordChoices, dragonById, dragonsIn, areaDone, unlockedAreas, answerFor } from './dragons.js';
 import { createCapture } from './capture.js';
 import { createBook } from './book.js';
+import { createDressUp } from './dressup.js';
 
 const VIEW_W = 160;
 const VIEW_H = 144;
@@ -145,7 +146,10 @@ const capture = createCapture({
       save.catches[dragon.id] = (save.catches[dragon.id] || 0) + 1;
       writeSave(save);
       // Caught the last one here: celebrate and open the next area.
-      if (!wasDone && areaDone(dragon.area, save.caught)) openDialogue(AREA_DONE_LINES[dragon.area]);
+      if (!wasDone && areaDone(dragon.area, save.caught)) {
+        if (dragon.area === 'cave') save.maldredHinted = true;
+        openDialogue(AREA_DONE_LINES[dragon.area]);
+      }
     }
     stepsSinceEncounter = 0;
     input.clear();
@@ -180,8 +184,14 @@ function choiceCount() {
 }
 
 const book = createBook({ getCaught: () => save.caught, getMode: () => mode, getWins: () => save.maldredWins || 0, onClose: () => input.clear() });
+const dressup = createDressUp({
+  getOutfit: () => save.king || {},
+  setOutfit: (o) => { save.king = o; writeSave(save); },
+  onClose: () => input.clear(),
+});
+
 $('btn-book').addEventListener('click', () => {
-  if (capture.isActive() || flash || warp || dialogue) return;
+  if (capture.isActive() || dressup.isOpen() || flash || warp || dialogue) return;
   book.open();
 });
 
@@ -206,6 +216,11 @@ function startWorld() {
     writeSave(save);
     const griffith = map.npcs.find((n) => n.id === 'griffith');
     if (griffith) openDialogue(griffith.lines);
+  } else if (areaDone('cave', save.caught) && !save.maldredHinted && !save.maldredWins) {
+    // Caught all 14 before the tower existed: point the way once.
+    save.maldredHinted = true;
+    writeSave(save);
+    openDialogue(MALDRED_HINT_LINES);
   }
 }
 
@@ -248,6 +263,10 @@ function battleRoundDone(round) {
 }
 
 function talkTo(npc) {
+  if (npc.dressup) {
+    openDialogue(npc.lines, {}, () => dressup.open());
+    return;
+  }
   if (npc.battle) {
     const lines = save.maldredWins && npc.rematch ? npc.rematch : npc.lines;
     openDialogue(lines, {}, startBattle);
@@ -310,7 +329,7 @@ $('dialogue-speak').addEventListener('pointerdown', (e) => {
 });
 
 function update(dt) {
-  if (capture.isActive() || book.isOpen()) return;
+  if (capture.isActive() || book.isOpen() || dressup.isOpen()) return;
   if (flash) {
     flash.t += dt;
     if (flash.t >= FLASH_MS) {

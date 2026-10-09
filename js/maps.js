@@ -8,8 +8,10 @@
 //   W  cave wall      ,  cave floor     g  gravel (dragons hide here)   C  crystal
 // Maldred's tower:
 //   X  tower wall     x  tower floor    r  red carpet    F  torch
+// Throne room (inside Bracken Castle; the castle doors D lead in):
+//   o  stone floor    K  throne         N  banner
 
-export const SOLID = new Set(['T', '~', '#', 'B', 'H', 'D', 'R', 'W', 'C', 'X', 'F']);
+export const SOLID = new Set(['T', '~', '#', 'B', 'H', 'R', 'W', 'C', 'X', 'F', 'K', 'N']);
 export const ENCOUNTER_TILES = new Set(['G', 'g']);
 
 export const MAPS = {
@@ -62,7 +64,42 @@ export const MAPS = {
         lines: ['Stop, {name}!', 'Get all {total} dragons here.', 'You have {count}.'],
       },
     ],
-    exits: [{ x: 13, y: 18, to: 'forest', tx: 13, ty: 1, dir: 'down' }],
+    exits: [
+      { x: 13, y: 18, to: 'forest', tx: 13, ty: 1, dir: 'down' },
+      { x: 11, y: 4, to: 'throne', tx: 5, ty: 8, dir: 'up' },
+      { x: 12, y: 4, to: 'throne', tx: 6, ty: 8, dir: 'up' },
+    ],
+  },
+
+  throne: {
+    id: 'throne',
+    name: 'Throne Room',
+    rows: [
+      '############',
+      '#H#N#KK#N#H#',
+      '#oooorroooo#',
+      '#oooorroooo#',
+      '#oooorroooo#',
+      '#oooorroooo#',
+      '#oooorroooo#',
+      '#oooorroooo#',
+      '#oooorroooo#',
+      '#####DD#####',
+    ],
+    start: { x: 5, y: 8, dir: 'up' },
+    npcs: [
+      {
+        id: 'king',
+        x: 5,
+        y: 2,
+        dressup: true,
+        lines: ['Hello, {name}!', 'I am King Roland.', 'Will you dress me up?'],
+      },
+    ],
+    exits: [
+      { x: 5, y: 9, to: 'bracken', tx: 11, ty: 5, dir: 'down' },
+      { x: 6, y: 9, to: 'bracken', tx: 12, ty: 5, dir: 'down' },
+    ],
   },
 
   forest: {
@@ -177,6 +214,9 @@ export const MAPS = {
 
 // Said after beating Maldred.
 export const VICTORY_LINES = ['You did it, {name}!', 'Maldred ran away!', 'Come back to fight him again!'];
+
+// For saves that already had all 14 dragons before Maldred's tower existed.
+export const MALDRED_HINT_LINES = ['You have all 14 dragons!', 'Oh no! Maldred is in the tower!', 'Go to the cave and stop him, {name}!'];
 
 // Said when he catches the last dragon in an area.
 export const AREA_DONE_LINES = {

@@ -79,6 +79,25 @@ const LEGS_B = [
   '....kkk..kkk....',
 ];
 
+const KING = [
+  '................',
+  '....y..yy..y....',
+  '....yyyyyyyy....',
+  '....yryjjyry....',
+  '...kssssssssk...',
+  '...kskssssksk...',
+  '...kswwsswwsk...',
+  '..kpwwwwwwwwpk..',
+  '..kppwwwwwwppk..',
+  '..kpppwwwwpppk..',
+  '..kppppyyppppk..',
+  '..kppppyyppppk..',
+  '..kwwwwwwwwwwk..',
+  '..kppppppppppk..',
+  '..kkkkkkkkkkkk..',
+  '................',
+];
+
 const GRIFFITH = [
   '.......kk.......',
   '......kppk......',
@@ -141,6 +160,7 @@ export function buildPlayerSprites() {
 export function buildNpcSprites() {
   return {
     griffith: paint(GRIFFITH),
+    king: paint(KING, { p: '#b3202a', w: '#ffffff', j: '#3b5bab' }),
     // The evil wizard: Griffith's shape in dark robes with a red belt.
     maldred: paint(GRIFFITH, { p: '#3a1d4a', w: '#24102e', y: '#b3202a', s: '#9fb59a' }),
     ana: paint(PLAYER_DOWN, { h: '#3b2414', r: '#f2a900', b: '#7a4a26' }),
@@ -366,6 +386,39 @@ Object.assign(TILE_PAINTERS, {
     ctx.fillRect(6, 3, 4, 5);
     ctx.fillStyle = '#fff3a0';
     ctx.fillRect(7, frame ? 4 : 5, 2, 2);
+  },
+});
+
+Object.assign(TILE_PAINTERS, {
+  o: (ctx) => {
+    ctx.fillStyle = '#c9c3b6';
+    ctx.fillRect(0, 0, TILE, TILE);
+    ctx.fillStyle = '#b8b1a2';
+    ctx.fillRect(0, 0, 8, 8);
+    ctx.fillRect(8, 8, 8, 8);
+  },
+  K: (ctx) => {
+    TILE_PAINTERS['#'](ctx);
+    ctx.fillStyle = '#1d1426';
+    ctx.fillRect(1, 1, 14, 15);
+    ctx.fillStyle = '#b3202a';
+    ctx.fillRect(2, 2, 12, 13);
+    ctx.fillStyle = '#f5c542';
+    ctx.fillRect(2, 2, 12, 2);
+    ctx.fillRect(2, 2, 2, 13);
+    ctx.fillRect(12, 2, 2, 13);
+    ctx.fillRect(6, 0, 4, 2);
+  },
+  N: (ctx) => {
+    TILE_PAINTERS['#'](ctx);
+    ctx.fillStyle = '#1d1426';
+    ctx.fillRect(3, 1, 10, 14);
+    ctx.fillStyle = '#2f7fd1';
+    ctx.fillRect(4, 2, 8, 11);
+    ctx.fillStyle = '#f5c542';
+    ctx.fillRect(7, 5, 2, 4);
+    ctx.fillRect(4, 13, 2, 2);
+    ctx.fillRect(10, 13, 2, 2);
   },
 });
 
