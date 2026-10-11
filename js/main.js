@@ -1,5 +1,5 @@
 import { TILE, buildPlayerSprites, buildNpcSprites, buildTiles } from './sprites.js';
-import { MAPS, SOLID, ENCOUNTER_TILES, AREA_DONE_LINES, VICTORY_LINES, MALDRED_HINT_LINES, tileAt } from './maps.js';
+import { MAPS, SOLID, ENCOUNTER_TILES, AREA_DONE_LINES, VICTORY_LINES, MALDRED_HINT_LINES, VOLCANO_HINT_LINES, tileAt } from './maps.js';
 import { createInput } from './input.js';
 import { loadSave, writeSave, newSave, loadMode, writeMode } from './storage.js';
 import { speak } from './speech.js';
@@ -147,7 +147,7 @@ const capture = createCapture({
       writeSave(save);
       // Caught the last one here: celebrate and open the next area.
       if (!wasDone && areaDone(dragon.area, save.caught)) {
-        if (dragon.area === 'cave') save.maldredHinted = true;
+        if (dragon.area === 'cave') { save.maldredHinted = true; save.volcanoHinted = true; }
         openDialogue(AREA_DONE_LINES[dragon.area]);
       }
     }
@@ -216,11 +216,15 @@ function startWorld() {
     writeSave(save);
     const griffith = map.npcs.find((n) => n.id === 'griffith');
     if (griffith) openDialogue(griffith.lines);
-  } else if (areaDone('cave', save.caught) && !save.maldredHinted && !save.maldredWins) {
-    // Caught all 14 before the tower existed: point the way once.
+  } else if (areaDone('cave', save.caught) && (!save.maldredHinted || !save.volcanoHinted)) {
+    // Caught all 14 before the tower or volcano existed: point the way once.
+    const lines = [];
+    if (!save.maldredHinted && !save.maldredWins) lines.push(...MALDRED_HINT_LINES);
+    if (!save.volcanoHinted) lines.push(...VOLCANO_HINT_LINES);
     save.maldredHinted = true;
+    save.volcanoHinted = true;
     writeSave(save);
-    openDialogue(MALDRED_HINT_LINES);
+    if (lines.length) openDialogue(lines);
   }
 }
 

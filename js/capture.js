@@ -284,6 +284,98 @@ const EFFECTS = {
       }
     },
   },
+  lava: {
+    every: 120,
+    // Glowing drips falling off the dragon into the lava pool.
+    spawn: () => ({ x: rand(DX + 10, DX + 50), y: rand(DY + 20, DY + 40), vx: 0, vy: 0.01, g: 0.0002, max: 1600, floor: 80, drop: true }),
+    color: (f, p) => (p.drop ? '#ffb000' : '#ffd23f'),
+    size: (f, p) => (p.drop ? [2, 3] : 1),
+    back(ctx, t) {
+      ctx.fillStyle = '#8e1b1b';
+      ctx.beginPath();
+      ctx.ellipse(GEM_X, 80, 46, 11, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#e8601c';
+      ctx.beginPath();
+      ctx.ellipse(GEM_X, 80, 42, 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffd23f';
+      for (let i = 0; i < 7; i++) {
+        const x = 40 + ((i * 13 + Math.floor(t / 90)) % 72);
+        ctx.fillRect(x, 77 + (i % 3) * 2, 3, 1);
+      }
+    },
+  },
+  ash: {
+    every: 60,
+    spawn: () => ({ x: rand(0, W), y: 0, vx: rand(-0.008, 0.008), vy: rand(0.015, 0.028), max: 5000, ember: Math.random() < 0.2, seed: rand(0, 6) }),
+    drawP(ctx, p) {
+      ctx.fillStyle = p.ember ? '#ff8c1a' : '#9aa0a6';
+      ctx.fillRect(Math.round(p.x + Math.sin(p.y / 9 + p.seed) * 2), Math.round(p.y), 2, 2);
+    },
+    back(ctx) {
+      ctx.fillStyle = '#6e7378';
+      ctx.beginPath();
+      ctx.ellipse(GEM_X, 81, 44, 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#9aa0a6';
+      for (const [x, y] of [[44, 79], [58, 83], [90, 78], [104, 82], [72, 85]]) ctx.fillRect(x, y, 5, 2);
+    },
+  },
+  pop: {
+    every: 260,
+    // Lava bubbles grow out of the ground and pop.
+    spawn: () => ({ x: rand(DX - 30, DX + 76), y: rand(74, 88), vx: 0, vy: 0, max: 900 }),
+    drawP(ctx, p, f) {
+      const x = Math.round(p.x);
+      const y = Math.round(p.y);
+      if (f < 0.75) {
+        const r = 1 + f * 7;
+        ctx.fillStyle = '#1d1426';
+        ctx.beginPath();
+        ctx.arc(x, y - r, r + 1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ff8c1a';
+        ctx.beginPath();
+        ctx.arc(x, y - r, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fff3a0';
+        ctx.fillRect(x - Math.round(r / 2), y - Math.round(r * 1.5), 2, 2);
+      } else {
+        // Pop! Little splashes fly out.
+        const k = (f - 0.75) / 0.25;
+        ctx.fillStyle = '#ffd23f';
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2;
+          ctx.fillRect(Math.round(x + Math.cos(a) * (3 + k * 8)), Math.round(y - 6 + Math.sin(a) * (3 + k * 8)), 2, 2);
+        }
+      }
+    },
+    back(ctx) {
+      ctx.fillStyle = '#8e1b1b';
+      ctx.beginPath();
+      ctx.ellipse(GEM_X, 82, 50, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+    },
+  },
+  glow: {
+    every: 140,
+    spawn: () => ({ x: rand(DX + 4, DX + 60), y: rand(DY + 30, DY + 60), vx: rand(-0.01, 0.01), vy: -rand(0.02, 0.04), max: 1600 }),
+    color: (f) => (f < 0.5 ? '#ffd23f' : '#ff8c1a'),
+    size: (f) => (f < 0.6 ? 2 : 1),
+    back(ctx, t) {
+      // A warm pulsing glow around the black dragon.
+      const pulse = 0.35 + Math.sin(t / 250) * 0.15;
+      ctx.fillStyle = `rgba(255, 140, 26, ${pulse})`;
+      ctx.beginPath();
+      ctx.ellipse(DX + 34, DY + 34, 38, 34, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = `rgba(255, 210, 63, ${pulse})`;
+      ctx.beginPath();
+      ctx.ellipse(DX + 34, DY + 36, 24, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
+    },
+  },
 };
 
 const THEMES = {
@@ -292,6 +384,7 @@ const THEMES = {
   night: { sky: ['#141a3a', '#1c2450', '#263066'], ground: '#3d6b3a', spot: '#335c31' },
   cave: { sky: ['#2a2433', '#332b3f', '#3d344b'], ground: '#4a4458', spot: '#5a5368' },
   tower: { sky: ['#1a0f24', '#22142e', '#2b1a3a'], ground: '#3a2a4a', spot: '#4a3660' },
+  volcano: { sky: ['#3a0f14', '#5a1a14', '#7a2a14'], ground: '#2a2026', spot: '#3a2a30' },
 };
 
 function drawBackground(ctx, theme) {
@@ -454,7 +547,7 @@ export function createCapture({ onDone, onAnswer }) {
       sprite: dragonSprite(dragon),
       effect: EFFECTS[dragon.effect] || {},
       // Battles always happen inside Maldred's dark tower.
-      theme: battle ? 'tower' : fxTheme || (dragon.area === 'cave' ? 'cave' : 'day'),
+      theme: battle ? 'tower' : dragon.area === 'volcano' ? 'volcano' : fxTheme || (dragon.area === 'cave' ? 'cave' : 'day'),
       phase: 'appear',
       t: 0,
       clock: 0,

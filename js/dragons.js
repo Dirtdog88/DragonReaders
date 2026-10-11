@@ -77,10 +77,31 @@ export const DRAGONS = [
     word: 'rock', color: 'brown', area: 'cave', effect: 'rock', shape: 'winged', wings: false,
     colors: { main: '#8a6444', light: '#c49a74', dark: '#55391f', accent: '#ff8c1a' },
   },
+  // ---- Volcano (lava dragons made up for this game; they come after the 14 from the books)
+  {
+    id: 'magma', name: 'Magma', type: 'Lava', book: 15, master: 'Rori',
+    word: 'lava', color: 'orange', area: 'volcano', effect: 'lava', shape: 'serpent',
+    colors: { main: '#e8601c', light: '#ffd23f', dark: '#8e1b1b', accent: '#ffd23f' },
+  },
+  {
+    id: 'ember', name: 'Ember', type: 'Ash', book: 16, master: 'Rori',
+    word: 'ash', color: 'gray', area: 'volcano', effect: 'ash', shape: 'winged',
+    colors: { main: '#6e7378', light: '#c4c8cc', dark: '#3a3448', accent: '#ff6b00' },
+  },
+  {
+    id: 'pyra', name: 'Pyra', type: 'Lava Bubble', book: 17, master: 'Rori',
+    word: 'pop', color: 'red', area: 'volcano', effect: 'pop', shape: 'winged', wings: false,
+    colors: { main: '#d62f2f', light: '#ffb36b', dark: '#8e1b1b', accent: '#ffd23f' },
+  },
+  {
+    id: 'obsidian', name: 'Obsidian', type: 'Glow', book: 18, master: 'Rori',
+    word: 'glow', color: 'black', area: 'volcano', effect: 'glow', shape: 'winged',
+    colors: { main: '#2e2838', light: '#ff8c1a', dark: '#4a4058', accent: '#ffd23f' },
+  },
 ];
 
 // Areas in the order they unlock.
-export const AREAS = ['bracken', 'forest', 'cave'];
+export const AREAS = ['bracken', 'forest', 'cave', 'volcano'];
 
 export function dragonsIn(area) {
   return DRAGONS.filter((d) => d.area === area);
@@ -304,9 +325,14 @@ const TOO_CLOSE = [
   ['wet', 'ice'], ['wet', 'rainbow'], ['wet', 'mud'],
   ['mud', 'rock'], ['rock', 'boom'], ['zap', 'boom'], ['zap', 'wet'], ['boom', 'wet'],
   ['rainbow', 'gold'], ['moon', 'silver'], ['moon', 'ice'], ['ice', 'silver'], ['silver', 'gold'],
+  // Volcano: every lava dragon is "hot", so hot never shows up with them.
+  ['hot', 'lava'], ['hot', 'ash'], ['hot', 'pop'], ['hot', 'glow'], ['lava', 'rock'], ['lava', 'sun'], ['lava', 'mud'],
+  ['ash', 'gas'], ['ash', 'ice'], ['ash', 'rock'], ['ash', 'silver'], ['pop', 'boom'], ['pop', 'zap'],
+  ['glow', 'sun'], ['glow', 'gold'], ['glow', 'moon'], ['glow', 'zap'], ['glow', 'lava'], ['lava', 'pop'],
   // Colors mode: shades that are easy to mix up on these dragons.
   ['red', 'orange'], ['orange', 'yellow'], ['orange', 'brown'], ['blue', 'purple'],
   ['gray', 'white'], ['gray', 'blue'], ['gray', 'brown'], ['white', 'blue'],
+  ['black', 'gray'], ['black', 'brown'], ['black', 'purple'],
 ];
 
 export function tooClose(a, b) {

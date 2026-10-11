@@ -10,9 +10,11 @@
 //   X  tower wall     x  tower floor    r  red carpet    F  torch
 // Throne room (inside Bracken Castle; the castle doors D lead in):
 //   o  stone floor    K  throne         N  banner
+// Volcano (through the south of the cave):
+//   V  volcanic rock  v  basalt floor   l  lava         a  ash (lava dragons hide here)
 
-export const SOLID = new Set(['T', '~', '#', 'B', 'H', 'R', 'W', 'C', 'X', 'F', 'K', 'N']);
-export const ENCOUNTER_TILES = new Set(['G', 'g']);
+export const SOLID = new Set(['T', '~', '#', 'B', 'H', 'R', 'W', 'C', 'X', 'F', 'K', 'N', 'V', 'l']);
+export const ENCOUNTER_TILES = new Set(['G', 'g', 'a']);
 
 export const MAPS = {
   bracken: {
@@ -159,7 +161,7 @@ export const MAPS = {
       'W,gggg,,,,,,,,,,gggg,,,W',
       'W,,,,,,,,ggg,,,,,,,,,C,W',
       'W,,C,,,,,ggg,,,,ggg,,,,W',
-      'WWWWWWWWWWWWWWWWWWWWWWWW',
+      'WWWWWWWWWWWW,WWWWWWWWWWW',
     ],
     start: { x: 1, y: 6, dir: 'right' },
     npcs: [
@@ -172,11 +174,42 @@ export const MAPS = {
         gate: 'cave',
         lines: ['Stop, {name}!', 'Maldred is in the tower.', 'Get all {total} dragons here.', 'You have {count}.'],
       },
+      {
+        // Guards the way down to the volcano until every cave dragon is caught.
+        id: 'rori',
+        x: 12,
+        y: 12,
+        gate: 'cave',
+        lines: ['Stop, {name}!', 'The volcano is hot!', 'Get all {total} dragons here.', 'You have {count}.'],
+      },
     ],
     exits: [
       { x: 0, y: 6, to: 'forest', tx: 22, ty: 13, dir: 'left' },
       { x: 23, y: 6, to: 'tower', tx: 5, ty: 8, dir: 'up' },
+      { x: 12, y: 13, to: 'volcano', tx: 12, ty: 1, dir: 'down' },
     ],
+  },
+
+  volcano: {
+    id: 'volcano',
+    name: 'Volcano',
+    rows: [
+      'VVVVVVVVVVVVvVVVVVVVVVVV',
+      'VvvvvvvvvvvvvvvvvvvvvvvV',
+      'VvaaaavvvlllllvvvaaaavvV',
+      'VvaaaavvvlllllvvvaaaavvV',
+      'VvvvvvvvvvlllvvvvvvvvvvV',
+      'VlllvvvaaavvvaaavvvlllvV',
+      'VlllvvvaaavvvaaavvvlllvV',
+      'VvvvvvvvvvvvvvvvvvvvvvvV',
+      'VvaaavvlllvvvvlllvvaaavV',
+      'VvaaavvlllvvvvlllvvaaavV',
+      'VvvvvvvvvvvvvvvvvvvvvvvV',
+      'VVVVVVVVVVVVVVVVVVVVVVVV',
+    ],
+    start: { x: 12, y: 1, dir: 'down' },
+    npcs: [],
+    exits: [{ x: 12, y: 0, to: 'cave', tx: 12, ty: 12, dir: 'up' }],
   },
 
   tower: {
@@ -215,6 +248,9 @@ export const MAPS = {
 // Said after beating Maldred.
 export const VICTORY_LINES = ['You did it, {name}!', 'Maldred ran away!', 'Come back to fight him again!'];
 
+// Shown once to saves that already had all 14 dragons before the volcano existed.
+export const VOLCANO_HINT_LINES = ['A volcano opened in the cave!', 'Lava dragons live there!', 'Go to the bottom of the cave, {name}!'];
+
 // For saves that already had all 14 dragons before Maldred's tower existed.
 export const MALDRED_HINT_LINES = ['You have all 14 dragons!', 'Oh no! Maldred is in the tower!', 'Go to the cave and stop him, {name}!'];
 
@@ -222,7 +258,8 @@ export const MALDRED_HINT_LINES = ['You have all 14 dragons!', 'Oh no! Maldred i
 export const AREA_DONE_LINES = {
   bracken: ['You got all 4 castle dragons!', 'The forest is open!'],
   forest: ['You got all 5 forest dragons!', 'The cave is open!'],
-  cave: ['You got all 14 dragons!', 'Oh no! Maldred is in the tower!', 'Go and stop him, {name}!'],
+  cave: ['You got all 14 dragons!', 'Oh no! Maldred is in the tower!', 'Go and stop him, {name}!', 'And a volcano opened too!'],
+  volcano: ['You got all the lava dragons!', 'You are a lava Dragon Master, {name}!'],
 };
 
 export function tileAt(map, x, y) {

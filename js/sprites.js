@@ -165,6 +165,7 @@ export function buildNpcSprites() {
     maldred: paint(GRIFFITH, { p: '#3a1d4a', w: '#24102e', y: '#b3202a', s: '#9fb59a' }),
     ana: paint(PLAYER_DOWN, { h: '#3b2414', r: '#f2a900', b: '#7a4a26' }),
     bo: paint(PLAYER_DOWN, { h: '#2b2b3a', r: '#2f7fd1', b: '#1d4f8a' }),
+    rori: paint(PLAYER_DOWN, { h: '#1d1d2a', r: '#d62f2f', b: '#7a2f1f' }),
   };
 }
 
@@ -419,6 +420,49 @@ Object.assign(TILE_PAINTERS, {
     ctx.fillRect(7, 5, 2, 4);
     ctx.fillRect(4, 13, 2, 2);
     ctx.fillRect(10, 13, 2, 2);
+  },
+});
+
+Object.assign(TILE_PAINTERS, {
+  V: (ctx) => {
+    ctx.fillStyle = '#2a2026';
+    ctx.fillRect(0, 0, TILE, TILE);
+    ctx.fillStyle = '#3a2a30';
+    ctx.fillRect(1, 2, 6, 4);
+    ctx.fillRect(9, 9, 6, 4);
+    ctx.fillStyle = '#b3202a'; // glowing cracks
+    ctx.fillRect(4, 8, 1, 4);
+    ctx.fillRect(5, 11, 3, 1);
+    ctx.fillRect(12, 2, 1, 3);
+  },
+  v: (ctx) => {
+    ctx.fillStyle = '#4a3a40';
+    ctx.fillRect(0, 0, TILE, TILE);
+    ctx.fillStyle = '#3a2a30';
+    const r = rng(23);
+    for (let i = 0; i < 6; i++) ctx.fillRect(Math.floor(r() * 15), Math.floor(r() * 15), 2, 1);
+  },
+  l: (ctx, frame) => {
+    ctx.fillStyle = '#e8601c';
+    ctx.fillRect(0, 0, TILE, TILE);
+    ctx.fillStyle = '#ffb000';
+    const o = frame ? 5 : 0;
+    ctx.fillRect((2 + o) % 16, 3, 5, 2);
+    ctx.fillRect((9 + o) % 16, 10, 5, 2);
+    ctx.fillStyle = '#fff3a0';
+    ctx.fillRect((4 + o) % 16, 3, 1, 1);
+  },
+  a: (ctx, frame) => {
+    ctx.fillStyle = '#3a3438';
+    ctx.fillRect(0, 0, TILE, TILE);
+    ctx.fillStyle = '#6e6870';
+    for (let y = 1; y < TILE; y += 4) {
+      for (let x = (y % 8 === 1 ? 1 : 3); x < TILE; x += 4) ctx.fillRect(x, y, 2, 1);
+    }
+    ctx.fillStyle = frame ? '#ff8c1a' : '#b3202a'; // embers
+    ctx.fillRect(6, 5, 1, 1);
+    ctx.fillRect(12, 12, 1, 1);
+    ctx.fillRect(2, 13, 1, 1);
   },
 });
 
