@@ -1,0 +1,117 @@
+/* Kirby Words: bright Dream Land sky. */
+body { background: #3a8bff; }
+.dreamland { background: linear-gradient(#5aa8ff, #9fd3ff 60%, #c8ecff); color: var(--ink); }
+
+.star-count {
+  font-size: 30px;
+  font-weight: 700;
+  background: var(--ink);
+  color: #ffe14a;
+  padding: 8px 16px;
+  border-radius: 16px;
+}
+
+.start { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+.start[hidden] { display: none; }
+.kirby-title {
+  margin: 0;
+  font-size: clamp(54px, 10vw, 100px);
+  color: #ff7eb6;
+  text-shadow: 0 6px 0 #b0204a, 0 0 24px rgba(255, 255, 255, 0.8);
+}
+#start-art { width: 192px; height: 192px; animation: bob 1.4s ease-in-out infinite; }
+.start .big-btn, .dreamland .card .big-btn { background: #ff7eb6; color: #fff; box-shadow: 0 6px 0 #b0204a; }
+
+.level { display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.6vh, 16px); }
+.level[hidden] { display: none; }
+.level-top { display: flex; gap: 20px; align-items: center; min-height: 44px; }
+.level-count { font-size: 24px; font-weight: 700; color: var(--ink); }
+.power {
+  font-size: 28px;
+  font-weight: 700;
+  padding: 4px 16px;
+  border-radius: 14px;
+  background: var(--ink);
+  color: #fff;
+}
+.power:empty { display: none; }
+
+.stage { position: relative; width: min(92vw, calc(60vh * 4 / 3)); aspect-ratio: 4 / 3; }
+#sky { width: 100%; height: 100%; border: 8px solid var(--ink); border-radius: 14px; display: block; }
+
+/* Each sight word floats in a bubble next to its enemy. */
+.bubbles { position: absolute; inset: 0; pointer-events: none; }
+.bubble {
+  position: absolute;
+  right: 26%;
+  transform: translateY(-50%);
+  pointer-events: auto;
+  min-width: 26%;
+  padding: 6px 18px 10px;
+  border-radius: 22px;
+  background: #fff;
+  color: var(--ink);
+  font-size: clamp(40px, 6.5vw, 72px);
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 6px 0 #9aa0a6;
+  animation: float 2.4s ease-in-out infinite;
+  transition: opacity 0.25s;
+}
+.bubble:nth-child(2) { animation-delay: -0.8s; }
+.bubble:nth-child(3) { animation-delay: -1.6s; }
+.bubble.gone { opacity: 0; pointer-events: none; }
+.bubble.wrong { animation: wiggle 0.4s; }
+.bubble.hint { animation: pulse 0.9s ease-in-out infinite; }
+@keyframes float { 50% { transform: translateY(calc(-50% - 6px)); } }
+
+.power-pop {
+  position: absolute;
+  left: 4%;
+  top: 6%;
+  font-size: clamp(48px, 9vw, 96px);
+  font-weight: 700;
+  color: #fff;
+  -webkit-text-stroke: 3px var(--ink);
+  text-shadow: 0 6px 0 var(--ink);
+  animation: powerpop 1.2s ease-out forwards;
+  pointer-events: none;
+}
+.power-pop[hidden] { display: none; }
+@keyframes powerpop { 0% { transform: scale(0.3); opacity: 0; } 20% { transform: scale(1.15); opacity: 1; } 80% { opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
+
+.prompt { display: flex; align-items: center; gap: 16px; }
+.say-btn {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: #ff7eb6;
+  color: #fff;
+  font-size: 40px;
+  box-shadow: 0 6px 0 #b0204a;
+}
+.say-btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #b0204a; }
+.prompt-text { font-size: clamp(26px, 4vw, 38px); font-weight: 700; color: var(--ink); }
+
+#clear-art { width: 128px; height: 128px; }
+.clear-stars { font-size: 48px !important; letter-spacing: 6px; }
+.card-buttons { display: flex; gap: 16px; margin-top: 12px; }
+.home-link { text-decoration: none; }
+
+.book-card { width: min(92vw, 760px); }
+.book-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; margin: 8px 0 12px; }
+.ability-card {
+  background: #fff4f9;
+  border-radius: 16px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 4px 0 #f0c0d6;
+}
+.ability-card canvas { width: 100%; max-width: 110px; aspect-ratio: 1; image-rendering: pixelated; }
+.ability-card span { font-size: clamp(20px, 3vw, 28px); font-weight: 700; color: var(--ink); }
+.ability-card.unknown { background: #e8e0ee; box-shadow: none; }
+.ability-card.unknown canvas { filter: brightness(0); opacity: 0.35; }
+@media (orientation: portrait) { .book-grid { grid-template-columns: repeat(2, 1fr); } }

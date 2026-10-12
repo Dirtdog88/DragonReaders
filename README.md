@@ -1,4 +1,8 @@
-# Dragon Readers
+# Reading Arcade
+
+A small arcade of reading games for a beginning reader: **Dragon Readers** (letter sounds, read the word for the picture), **Pumpkin Patch** (blending sounds into words) and **Kirby Words** (sight words, with Kirby copying powers).
+
+## Dragon Readers
 
 A small Game Boy–style reading game for beginning readers, themed on the *Dragon Masters* books.
 Walk around Bracken Castle and catch dragons by reading the word that matches them.

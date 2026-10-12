@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#3a8bff">
+  <title>Kirby Words</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/games.css">
+  <link rel="stylesheet" href="css/kirby.css">
+</head>
+<body>
+  <main class="page dreamland">
+    <a href="./" class="home-btn" aria-label="Back to the arcade">&#8962;</a>
+    <div class="top-right">
+      <span class="star-count" id="star-count">&#11088; 0</span>
+      <button id="btn-book" class="icon-btn" aria-label="Ability Book">&#128213;</button>
+    </div>
+
+    <!-- Start -->
+    <section id="start" class="start">
+      <h1 class="kirby-title">Kirby Words</h1>
+      <canvas id="start-art" class="pixel" width="32" height="32"></canvas>
+      <button id="btn-play" class="big-btn">Play!</button>
+    </section>
+
+    <!-- A level -->
+    <section id="level" class="level" hidden>
+      <div class="level-top">
+        <span id="level-count" class="level-count"></span>
+        <span id="power" class="power"></span>
+      </div>
+      <div class="stage">
+        <canvas id="sky" class="pixel" width="128" height="96"></canvas>
+        <div id="bubbles" class="bubbles"></div>
+        <div id="power-pop" class="power-pop" hidden></div>
+      </div>
+      <div class="prompt">
+        <button id="btn-say" class="say-btn" aria-label="Hear the word">&#128264;</button>
+        <span class="prompt-text">Find the word!</span>
+      </div>
+    </section>
+
+    <!-- Level clear -->
+    <div id="clear" class="overlay" hidden>
+      <div class="card">
+        <canvas id="clear-art" class="pixel" width="32" height="32"></canvas>
+        <h2>Level clear!</h2>
+        <p id="clear-stars" class="clear-stars"></p>
+        <div class="card-buttons">
+          <button id="btn-next" class="big-btn">Next!</button>
+          <a href="./" class="big-btn home-link">&#8962;</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ability Book -->
+    <div id="book" class="overlay" hidden>
+      <div class="card book-card">
+        <h2>Ability Book</h2>
+        <div id="book-grid" class="book-grid"></div>
+        <button id="book-close" class="big-btn">OK</button>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="js/kirby.js"></script>
+</body>
+</html>

@@ -39,6 +39,13 @@ His favorite part of Kirby is absorbing powers, so it drives the game:
 
 ## Build order (check in after each)
 
-1. Arcade home page; move Dragon Readers into its own cabinet (saves kept).
-2. Halloween: Pumpkin Patch (before Oct 31).
-3. Kirby: Dream Land Words.
+1. [x] Arcade home page; Dragon Readers moved to `dragon.html` (saves kept).
+2. [x] Halloween: Pumpkin Patch (`halloween.html`).
+3. [x] Kirby Words (`kirby.html`).
+
+## Built (2026-10-12)
+
+- **Arcade** (`index.html`, `js/arcade.js`, `css/arcade.css`): neon hall with three cabinets (dragons, pumpkins, Kirby), each showing progress from that game's save.
+- **Pumpkin Patch** (`halloween.html`, `js/halloween.js`): 8 doors a night. Letters sit on pumpkins; tapping one says its sound (the iPad voice reads letter names, so sounds are spelled out: "kuh", "aah", "tuh"). 🔊 says all the sounds in turn. Picture choices are the word, one rhyme (only the first sound differs) and one other. Wrong pick: fades, sounds replay, and after two misses the answer pulses. Candy count saved.
+- **Kirby Words** (`kirby.html`, `js/kirby.js`): 6 words a level, heard not shown ("Find... the!"), so it is real sight-word recognition. The three choices always start with different letters. Every right catch transforms Kirby; a new power appears now and then (always on a level's last word), so the Ability Book fills over a few levels. Levels end with Kirby using his power on a treasure block. Word tiers unlock at 2 and 4 levels cleared.
+- **Shared art** (`js/art.js`) and styles (`css/games.css`). Every game has a ⌂ button back to the arcade.

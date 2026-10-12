@@ -37,4 +37,4 @@ $('prog-dragon').textContent = `\u{1F409} ${caught} / ${DRAGONS.length}`;
 const spooky = read('arcade-halloween-v1');
 $('prog-spooky').textContent = `\u{1F36C} ${spooky?.candy || 0}`;
 
-$('prog-kirby').textContent = `⭐ ${kirby?.abilities?.length || 0} / ${ABILITIES.length}`;
+$('prog-kirby').textContent = `✨ ${kirby?.abilities?.length || 0} / ${ABILITIES.length}`;
