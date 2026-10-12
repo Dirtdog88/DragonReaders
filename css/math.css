@@ -1,0 +1,93 @@
+/* Spidey Math: city rooftops at sunset. */
+body { background: #2a1f4a; }
+.city { background: linear-gradient(#ff8c5a, #c2457a 40%, #2a1f4a 85%); }
+
+.badge-count {
+  font-size: 30px;
+  font-weight: 700;
+  background: var(--ink);
+  color: #ffd23f;
+  padding: 8px 16px;
+  border-radius: 16px;
+}
+
+.start { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+.start[hidden] { display: none; }
+.math-title {
+  margin: 0;
+  font-size: clamp(54px, 10vw, 100px);
+  color: #fff;
+  text-shadow: 0 6px 0 #b0202a, 0 0 24px rgba(214, 47, 47, 0.7);
+}
+#start-art { width: 192px; height: 192px; animation: bob 1.4s ease-in-out infinite; }
+.city .big-btn { background: #d62f2f; color: #fff; box-shadow: 0 6px 0 #8e1b1b; }
+
+.play { display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1.4vh, 14px); }
+.play[hidden] { display: none; }
+.roof-count { font-size: 24px; font-weight: 700; color: #fff; min-height: 1.2em; }
+#scene {
+  width: min(86vw, calc(32vh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  border: 8px solid var(--ink);
+  border-radius: 12px;
+}
+
+/* 2 + 1 = ?  with bugs to count under the numbers */
+.problem {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 2vw, 20px);
+  background: rgba(29, 20, 38, 0.55);
+  padding: 10px 18px;
+  border-radius: 24px;
+}
+.group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.group .num { font-size: clamp(56px, 9vw, 96px); font-weight: 700; line-height: 1; color: #fff; }
+.bugs { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; max-width: 220px; }
+.bug {
+  width: clamp(40px, 5.5vw, 56px);
+  height: clamp(40px, 5.5vw, 56px);
+  padding: 2px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  transition: transform 0.15s, background 0.15s;
+}
+.bug canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+.bug.counted { background: #ffd23f; transform: scale(1.1); }
+.bug.dot { width: 22px; height: 22px; border-radius: 50%; background: #fff; padding: 0; }
+.bug.dot.counted { background: #ffd23f; }
+.op { font-size: clamp(56px, 9vw, 96px); font-weight: 700; color: #fff; }
+.answer {
+  min-width: clamp(70px, 10vw, 110px);
+  height: clamp(80px, 11vw, 116px);
+  border-radius: 18px;
+  border: 6px dashed #ffd23f;
+  font-size: clamp(56px, 9vw, 96px);
+  font-weight: 700;
+  line-height: clamp(70px, 10vw, 104px);
+  text-align: center;
+  color: #ffd23f;
+}
+.answer.filled { border-style: solid; background: var(--green); color: #fff; border-color: var(--green); animation: pop 0.35s ease-out; }
+.sum-row { min-height: 1.4em; font-size: clamp(22px, 3vw, 30px); font-weight: 700; color: #fff; }
+
+.numbers { display: flex; gap: clamp(16px, 4vw, 40px); }
+.num-btn {
+  width: clamp(100px, 14vw, 140px);
+  height: clamp(100px, 14vw, 140px);
+  border-radius: 28px;
+  background: #fff;
+  color: var(--ink);
+  font-size: clamp(64px, 10vw, 96px);
+  font-weight: 700;
+  box-shadow: 0 8px 0 #9aa0a6;
+  transition: opacity 0.3s, transform 0.3s;
+}
+.num-btn:active { transform: translateY(4px); box-shadow: 0 4px 0 #9aa0a6; }
+.num-btn.wrong { opacity: 0.2; transform: scale(0.85); }
+.num-btn.right { background: var(--green); color: #fff; box-shadow: 0 8px 0 #2e7d32; }
+.num-btn.hint { animation: pulse 0.9s ease-in-out infinite; }
+
+#done-art { width: 128px; height: 128px; }
+.card-buttons { display: flex; gap: 16px; margin-top: 12px; }
+.home-link { text-decoration: none; }

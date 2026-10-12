@@ -28,7 +28,7 @@ body { background: #140d1f; }
 
 .cabinet {
   --glow: #f5c542;
-  width: clamp(200px, 27vw, 280px);
+  width: clamp(170px, 21vw, 250px);
   border-radius: 22px 22px 10px 10px;
   background: linear-gradient(#3d2a52, #2b1d3a);
   border: 6px solid var(--glow);
@@ -46,6 +46,7 @@ body { background: #140d1f; }
 .cabinet.dragon { --glow: #f5c542; }
 .cabinet.spooky { --glow: #ff8c1a; }
 .cabinet.kirby { --glow: #ff7eb6; }
+.cabinet.math { --glow: #d62f2f; }
 
 .marquee {
   width: 100%;
@@ -72,6 +73,11 @@ body { background: #140d1f; }
 }
 .cabinet.spooky .screen { background: radial-gradient(circle, #5a2a6a, #1a0f24); }
 .cabinet.kirby .screen { background: radial-gradient(circle, #9fd3ff, #3a8bff); }
+.cabinet.math .screen { background: linear-gradient(#ff9a5a, #c2457a 60%, #2a1f4a); }
+@media (orientation: portrait) {
+  .cabinets { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .cabinet { width: min(42vw, 300px); }
+}
 .screen canvas { width: 82%; height: 82%; animation: bob 1.8s ease-in-out infinite; }
 
 .progress {

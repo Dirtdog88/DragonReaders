@@ -2,6 +2,7 @@
 
 import { dragonSprite, dragonById, DRAGONS } from './dragons.js';
 import { pumpkinCanvas, kirbyCanvas, ABILITIES } from './art.js';
+import { spideySprite } from './spidey.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -22,6 +23,7 @@ function paint(id, src) {
 
 paint('art-dragon', dragonSprite(dragonById('vulcan')).normal);
 paint('art-spooky', pumpkinCanvas());
+paint('art-math', spideySprite());
 
 const kirby = read('arcade-kirby-v1');
 // Show Kirby wearing his latest power.
@@ -33,6 +35,9 @@ const caught = Math.max(
   read('dragon-readers-save-colors-v1')?.caught?.length || 0,
 );
 $('prog-dragon').textContent = `\u{1F409} ${caught} / ${DRAGONS.length}`;
+
+const math = read('arcade-math-v1');
+$('prog-math').textContent = `\u{1F3C5} ${math?.badges || 0}`;
 
 const spooky = read('arcade-halloween-v1');
 $('prog-spooky').textContent = `\u{1F36C} ${spooky?.candy || 0}`;

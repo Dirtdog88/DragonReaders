@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#2a1f4a">
+  <title>Spidey Math</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/games.css">
+  <link rel="stylesheet" href="css/math.css">
+</head>
+<body>
+  <main class="page city">
+    <a href="./" class="home-btn" aria-label="Back to the arcade">&#8962;</a>
+    <div class="top-right">
+      <span class="badge-count" id="badge-count">&#127941; 0</span>
+    </div>
+
+    <!-- Start -->
+    <section id="start" class="start">
+      <h1 class="math-title">Spidey Math</h1>
+      <canvas id="start-art" class="pixel" width="32" height="32"></canvas>
+      <button id="btn-go" class="big-btn">Swing!</button>
+    </section>
+
+    <!-- Rooftops -->
+    <section id="play" class="play" hidden>
+      <div class="roof-count" id="roof-count"></div>
+      <canvas id="scene" class="pixel" width="128" height="72"></canvas>
+      <div class="problem">
+        <div id="group-a" class="group"></div>
+        <span class="op">+</span>
+        <div id="group-b" class="group"></div>
+        <span class="op">=</span>
+        <span id="answer" class="answer"></span>
+        <button id="btn-hear" class="speak-btn" aria-label="Hear it">&#128264;</button>
+      </div>
+      <div class="sum-row" id="sum-row"></div>
+      <div id="numbers" class="numbers"></div>
+    </section>
+
+    <!-- City saved -->
+    <div id="done" class="overlay" hidden>
+      <div class="card">
+        <canvas id="done-art" class="pixel" width="32" height="32"></canvas>
+        <h2>You saved the city!</h2>
+        <p id="done-text"></p>
+        <div class="card-buttons">
+          <button id="btn-again" class="big-btn">Again!</button>
+          <a href="./" class="big-btn home-link">&#8962;</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="js/math.js"></script>
+</body>
+</html>
