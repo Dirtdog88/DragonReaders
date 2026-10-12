@@ -57,3 +57,12 @@ His favorite part of Kirby is absorbing powers, so it drives the game:
 - Three number buttons: the answer and its two nearest neighbors. Wrong: fades, "Let's count!", the bugs count themselves aloud; after two misses the answer pulses. Right: the answer fills in, "1 plus 1 is 2!", and Spidey swings to the next roof.
 - 8 problems a round, then "You saved the city!" and a city badge.
 - Sums to 5 first; a round with 2 or fewer slips moves up to sums to 10, then to dots instead of bugs. Adding only for now.
+
+## More playing, short learning breaks (added 2026-10-12)
+
+Feedback: he wants more walking around and playing, with learning in between. Kirby and Spidey are now side-scrollers (they replace the quiz versions). Saves carry over.
+
+- **Shared engine** (`js/platform.js`): ◀ ▶ A B touch buttons (keyboard: arrows, Z/space, X, C), tile levels built from a short recipe, gravity and tile collisions, camera. Shared layout styles live in `css/games.css`.
+- **Kirby Adventure** (`kirby.html`, `js/kirby.js`): walk, jump and puff up to fly (hold A to float down). B inhales an enemy, and Kirby copies its power right away (8 powers). With a power, B uses it (fire/ice/beam breath, sword slash, spark ring, bomb throw, wing dash, stone drop); Fire is the only power that melts ice blocks. ⟲ drops the power so he can inhale a new one. 3 Star Doors a level (full height, so he can't fly over) open by finding a heard sight word: 3 choices, gentle retry, hint after two misses, +3 stars. A treasure block at the end gives the level's stars. Pits pop him back to safety, and enemy bumps just knock him back. 3 levels: Green Greens, Cloud Kingdom, Castle. The Ability Book stays.
+- **Spidey City** (`math.html`, `js/math.js`): run along rooftops, A jumps, run into a wall to climb it. B shoots a web on the ground (wraps robot bugs, +1 token), or zips him up and forward in the air (twice a jump). 3 rescues a level (kitten, balloon, bus) block the way until a math card is solved: a + b with robot bugs to count, 3 number buttons, "Let's count!" on a miss, hint after two misses, +3 tokens. Climb the tallest building to "You saved the city!" and a badge. Sums to 5, then to 10, then dots: he moves up after two levels in a row with at most one slip. 3 levels: Sunset, Night, Morning. Falls are caught by a web.
+- No losing anywhere.

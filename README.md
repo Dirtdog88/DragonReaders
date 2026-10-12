@@ -1,6 +1,6 @@
 # Reading Arcade
 
-A small arcade of reading games for a beginning reader: **Dragon Readers** (letter sounds, read the word for the picture), **Pumpkin Patch** (blending sounds into words) **Kirby Words** (sight words, with Kirby copying powers) and **Spidey Math** (adding with things to count).
+A small arcade of reading games for a beginning reader: **Dragon Readers** (letter sounds, read the word for the picture), **Pumpkin Patch** (blending sounds into words), **Kirby Adventure** (a side-scroller: inhale enemies to copy their powers, open Star Doors by finding sight words) and **Spidey City** (run, climb and web-swing across rooftops; each rescue is a little addition problem with robot bugs to count).
 
 ## Dragon Readers
 

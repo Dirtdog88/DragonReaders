@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#3a8bff">
-  <title>Kirby Words</title>
+  <title>Kirby Adventure</title>
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="manifest" href="manifest.webmanifest">
@@ -17,43 +17,61 @@
   <link rel="stylesheet" href="css/kirby.css">
 </head>
 <body>
-  <main class="page dreamland">
+  <main class="page adventure dreamland">
     <a href="./" class="home-btn" aria-label="Back to the arcade">&#8962;</a>
     <div class="top-right">
-      <span class="star-count" id="star-count">&#11088; 0</span>
       <button id="btn-book" class="icon-btn" aria-label="Ability Book">&#128213;</button>
+    </div>
+    <div class="adv-hud">
+      <span class="hud-pill" id="hud-stars"></span>
+      <span class="hud-pill power-pill" id="hud-power"></span>
+    </div>
+
+    <div class="adv-body" id="adv-body">
+      <div class="adv-left">
+        <button class="pad-btn" data-key="left" aria-label="Left">&#9664;</button>
+        <button class="pad-btn" data-key="right" aria-label="Right">&#9654;</button>
+      </div>
+      <div class="adv-screen" id="screen-box">
+        <canvas id="game" width="256" height="144"></canvas>
+        <div id="power-pop" class="power-pop" hidden></div>
+      </div>
+      <div class="adv-right">
+        <div class="row">
+          <button class="pad-btn round b" data-key="b" aria-label="Inhale or power">&#127744;</button>
+          <button class="pad-btn round a" data-key="a" aria-label="Jump">&#10514;</button>
+        </div>
+        <button class="pad-btn small" data-key="drop" aria-label="Drop power">&#10226;</button>
+      </div>
     </div>
 
     <!-- Start -->
-    <section id="start" class="start">
-      <h1 class="kirby-title">Kirby Words</h1>
-      <canvas id="start-art" class="pixel" width="32" height="32"></canvas>
-      <button id="btn-play" class="big-btn">Play!</button>
+    <section id="start" class="overlay start-overlay">
+      <div class="start">
+        <h1 class="kirby-title">Kirby Adventure</h1>
+        <canvas id="start-art" class="pixel" width="32" height="32"></canvas>
+        <button id="btn-play" class="big-btn">Play!</button>
+      </div>
     </section>
 
-    <!-- A level -->
-    <section id="level" class="level" hidden>
-      <div class="level-top">
-        <span id="level-count" class="level-count"></span>
-        <span id="power" class="power"></span>
+    <!-- Star Door: a sight word opens it -->
+    <div id="quiz" class="overlay" hidden>
+      <div class="card quiz-card">
+        <h2>Star Door</h2>
+        <div class="quiz-row">
+          <button id="quiz-say" class="say-btn" aria-label="Hear the word">&#128264;</button>
+          <p class="quiz-ask">Find the word!</p>
+        </div>
+        <div id="quiz-words" class="quiz-row"></div>
       </div>
-      <div class="stage">
-        <canvas id="sky" class="pixel" width="128" height="96"></canvas>
-        <div id="bubbles" class="bubbles"></div>
-        <div id="power-pop" class="power-pop" hidden></div>
-      </div>
-      <div class="prompt">
-        <button id="btn-say" class="say-btn" aria-label="Hear the word">&#128264;</button>
-        <span class="prompt-text">Find the word!</span>
-      </div>
-    </section>
+    </div>
 
     <!-- Level clear -->
     <div id="clear" class="overlay" hidden>
       <div class="card">
         <canvas id="clear-art" class="pixel" width="32" height="32"></canvas>
         <h2>Level clear!</h2>
-        <p id="clear-stars" class="clear-stars"></p>
+        <p id="clear-text"></p>
         <div class="card-buttons">
           <button id="btn-next" class="big-btn">Next!</button>
           <a href="./" class="big-btn home-link">&#8962;</a>

@@ -1,16 +1,17 @@
-// Spidey Math: swing across the city by solving little addition problems.
-// Every problem comes with bugs to count (tap one to count it), so he can
-// always work it out. Sums to 5 first, then to 10, then dots instead of bugs.
+// Spidey City: run along the rooftops, jump, climb walls and zip on webs.
+// B shoots a web (wraps robot bugs) or, in the air, zips Spidey up and forward.
+// Three rescues per level each ask a little addition problem, with robot bugs
+// to count. Sums to 5 first, then to 10, then dots instead of bugs.
 
 import { speak } from './speech.js';
 import { spideySprite } from './spidey.js';
 import { spookyPic } from './art.js';
+import {
+  TILE, VIEW_W, VIEW_H, GRAVITY, MAX_FALL,
+  createControls, buildLevel, tileAt, moveBody, overlap, cameraX, fitCanvas,
+} from './platform.js';
 
 const $ = (id) => document.getElementById(id);
-const W = 128;
-const H = 72;
-const ROOFS = 8; // problems per round
-const GAP = 80; // distance between rooftops
 const SAVE_KEY = 'arcade-math-v1';
 
 // ---------------------------------------------------------------- Save
@@ -22,7 +23,7 @@ function loadSave() {
     return {};
   }
 }
-const save = Object.assign({ badges: 0, stage: 0, facts: {} }, loadSave());
+const save = Object.assign({ badges: 0, stage: 0, streak: 0, tokens: 0, levels: 0, facts: {} }, loadSave());
 function writeSave() {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch { /* not fatal */ }
 }
@@ -37,15 +38,11 @@ function shuffle(a) {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Stage 0: sums up to 5. Stage 1: up to 10 (each part up to 5). Stage 2: same, with dots.
-function problems(stage) {
+function problems(stage, n) {
   const max = stage === 0 ? 5 : 10;
   const all = [];
   for (let a = 1; a <= 5; a++) for (let b = 1; b <= 5; b++) if (a + b <= max) all.push([a, b]);
-  shuffle(all);
-  // Never the same problem twice in a row.
-  const out = [];
-  while (out.length < ROOFS) out.push(...shuffle([...all]));
-  return out.slice(0, ROOFS);
+  return shuffle(all).slice(0, n);
 }
 
 // The answer and its two closest neighbors, so he has to really count.
@@ -54,161 +51,393 @@ function numberChoices(sum) {
   return shuffle([sum, near[0], near[1]]);
 }
 
-// ---------------------------------------------------------------- City scene
+// ---------------------------------------------------------------- Levels
+// Buildings are [x, width, roof row]. Rescues stand on a roof and block the
+// way until he solves the problem. The last building is the tallest: the goal.
 
-const canvas = $('scene');
+const LEVELS = [
+  {
+    name: 'Sunset City',
+    sky: ['#ff9a5a', '#f26b6b', '#c2457a'],
+    far: '#7a3a7a',
+    buildings: [[0, 12, 6], [14, 10, 5], [26, 8, 6], [36, 12, 4], [50, 10, 6], [62, 6, 5], [70, 8, 6], [80, 10, 2]],
+    rescues: [[19, 'kitten'], [42, 'balloon'], [65, 'bus']],
+    bots: [9, 29, 46, 56, 74],
+    tokens: [[5, 1], [6, 1], [13, 2], [22, 1], [25, 3], [31, 1], [35, 3], [39, 2], [40, 2], [49, 3], [54, 1], [61, 3], [69, 3], [75, 1]],
+  },
+  {
+    name: 'Night City',
+    sky: ['#1a1446', '#2a1f5a', '#3a2a6a'],
+    far: '#14102e',
+    moon: true,
+    buildings: [[0, 10, 6], [13, 8, 5], [24, 6, 6], [33, 10, 4], [46, 8, 6], [57, 9, 5], [69, 7, 6], [79, 11, 2]],
+    rescues: [[16, 'balloon'], [38, 'kitten'], [61, 'bus']],
+    bots: [7, 19, 27, 41, 50, 64, 73],
+    tokens: [[4, 1], [11, 3], [12, 3], [22, 3], [26, 1], [31, 3], [36, 1], [44, 3], [51, 1], [55, 3], [67, 3], [72, 1], [77, 3]],
+  },
+  {
+    name: 'Morning City',
+    sky: ['#7ec8ff', '#a8dcff', '#d0eeff'],
+    far: '#8aa8c8',
+    buildings: [[0, 10, 6], [12, 8, 3], [22, 10, 6], [35, 8, 2], [45, 10, 5], [58, 6, 3], [66, 10, 6], [79, 11, 1]],
+    rescues: [[15, 'kitten'], [48, 'bus'], [70, 'balloon']],
+    bots: [6, 17, 26, 30, 39, 52, 73],
+    tokens: [[5, 1], [11, 1], [14, 1], [21, 2], [27, 1], [33, 2], [37, 1], [44, 1], [50, 1], [56, 3], [61, 1], [64, 2], [76, 3]],
+  },
+];
+
+const RESCUE = {
+  kitten: { title: 'Save the kitten!', thanks: 'Meow! Thank you!' },
+  balloon: { title: 'Get the balloon!', thanks: 'Yay! My balloon!' },
+  bus: { title: 'Stop the bus!', thanks: 'The bus is safe!' },
+};
+
+const solid = (ch) => ch === '#';
+
+// Roof row of a column (first solid tile from the top).
+function roofRow(grid, col) {
+  for (let r = 0; r < grid.length; r++) if (solid(grid[r][col])) return r;
+  return grid.length;
+}
+
+// ---------------------------------------------------------------- Art
+
+const INK = '#1d1426';
+
+// Robot bug: little gray dome with a red eye and wiggly legs. 16x12.
+function drawBot(c, x, y, clock, wrapped) {
+  const R = (a, b, w, h, col) => { c.fillStyle = col; c.fillRect(x + a, y + b, w, h); };
+  if (wrapped) {
+    R(1, 2, 14, 10, INK);
+    R(2, 3, 12, 8, '#f4f4f4');
+    R(4, 4, 8, 1, '#c8c8d8'); R(3, 7, 10, 1, '#c8c8d8'); R(6, 3, 1, 8, '#c8c8d8');
+    return;
+  }
+  const step = Math.floor(clock / 120) % 2;
+  R(2, 9 + step, 2, 3 - step, INK); R(7, 10 - step, 2, 2 + step, INK); R(12, 9 + step, 2, 3 - step, INK);
+  R(1, 3, 14, 7, INK);
+  R(3, 1, 10, 3, INK);
+  R(2, 4, 12, 5, '#8a92a6');
+  R(4, 2, 8, 2, '#a8b0c4');
+  R(9, 4, 3, 3, '#ff3a3a');
+  R(10, 4, 1, 1, '#ffffff');
+  R(7, 0, 1, 2, INK);
+}
+
+// Bigger robot bug for the counting buttons.
+let botCache = null;
+function botCanvas() {
+  if (botCache) return botCache;
+  botCache = document.createElement('canvas');
+  botCache.width = 16;
+  botCache.height = 14;
+  drawBot(botCache.getContext('2d'), 0, 1, 0, false);
+  return botCache;
+}
+
+function drawBuildingTile(c, x, y, col, row, grid, colors) {
+  const color = colors[col] || '#3a2a5a';
+  const top = !solid(tileAt(grid, col, row - 1));
+  c.fillStyle = color;
+  c.fillRect(x, y, 16, 16);
+  // Windows: lit or dark
+  for (const [wx, wy] of [[3, 4], [10, 4], [3, 10], [10, 10]]) {
+    c.fillStyle = (col * 7 + row * 3 + wx + wy) % 5 ? '#ffd23f' : '#1d1426';
+    c.fillRect(x + wx, y + wy, 4, 3);
+  }
+  if (top) {
+    c.fillStyle = INK;
+    c.fillRect(x, y, 16, 3);
+    c.fillStyle = '#8a8aa6';
+    c.fillRect(x, y + 1, 16, 1);
+  }
+  // Dark edges where a building ends
+  if (!solid(tileAt(grid, col - 1, row)) || col === 0) { c.fillStyle = INK; c.fillRect(x, y, 1, 16); }
+  if (!solid(tileAt(grid, col + 1, row))) { c.fillStyle = INK; c.fillRect(x + 15, y, 1, 16); }
+}
+
+function drawRescue(c, r, x, y, clock) {
+  // x, y = bottom middle on the roof
+  if (r.kind === 'kitten') {
+    c.drawImage(spookyPic('cat'), x - 10, y - 20, 20, 20);
+  } else if (r.kind === 'balloon') {
+    // A kid reaching for a balloon caught on an antenna
+    c.fillStyle = INK; c.fillRect(x + 4, y - 30, 1, 30);
+    c.fillStyle = '#d62f2f';
+    c.beginPath(); c.ellipse(x + 5, y - 36 + Math.sin(clock / 300) * 1.5, 5, 6, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#ffffff'; c.fillRect(x + 2, y - 39, 2, 2);
+    c.fillStyle = '#ffcc99'; c.fillRect(x - 9, y - 16, 6, 6);
+    c.fillStyle = '#3a8bff'; c.fillRect(x - 10, y - 10, 8, 7);
+    c.fillStyle = INK; c.fillRect(x - 9, y - 3, 2, 3); c.fillRect(x - 5, y - 3, 2, 3);
+    c.fillStyle = '#ffcc99'; c.fillRect(x - 3, y - 15, 4, 2);
+  } else if (r.kind === 'bus') {
+    // A bus teetering on the roof
+    c.save();
+    c.translate(x, y);
+    c.rotate(Math.sin(clock / 250) * 0.06);
+    c.fillStyle = INK; c.fillRect(-15, -15, 30, 13);
+    c.fillStyle = '#ffd23f'; c.fillRect(-14, -14, 28, 11);
+    c.fillStyle = '#9fd3ff';
+    for (let i = 0; i < 4; i++) c.fillRect(-12 + i * 7, -12, 5, 4);
+    c.fillStyle = INK; c.beginPath(); c.arc(-8, -2, 3, 0, Math.PI * 2); c.arc(8, -2, 3, 0, Math.PI * 2); c.fill();
+    c.restore();
+  }
+  if (!r.done) {
+    // "!" bubble
+    const by = y - 52 + Math.sin(clock / 200) * 2;
+    c.fillStyle = INK; c.fillRect(x - 6, by - 1, 12, 14);
+    c.fillStyle = '#ffffff'; c.fillRect(x - 5, by, 10, 12);
+    c.fillStyle = '#d62f2f'; c.fillRect(x - 1, by + 2, 2, 6); c.fillRect(x - 1, by + 9, 2, 2);
+  }
+}
+
+function drawSky(c, def, cam, clock) {
+  def.sky.forEach((col, i) => { c.fillStyle = col; c.fillRect(0, i * 48, VIEW_W, 49); });
+  c.fillStyle = def.moon ? '#f4f0d0' : '#ffd23f';
+  c.beginPath(); c.arc(200, 34, 14, 0, Math.PI * 2); c.fill();
+  if (def.moon) {
+    c.fillStyle = '#ffffff';
+    for (let i = 0; i < 18; i++) c.fillRect((i * 53 + 11) % VIEW_W, (i * 29 + 5) % 70, 1, 1);
+  }
+  // Far skyline moves slower than the rooftops
+  c.fillStyle = def.far;
+  for (let i = -1; i < 14; i++) {
+    const shift = Math.floor((cam * 0.4) / 22);
+    const x = Math.round(i * 22 - ((cam * 0.4) % 22));
+    const h = 18 + (((i + shift) * 13) % 4) * 6; // stays below the lowest roof
+    c.fillRect(x, VIEW_H - h, 18, h);
+  }
+}
+
+// ---------------------------------------------------------------- Game state
+
+const canvas = $('game');
 const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
+fitCanvas(canvas, $('screen-box'));
+const pad = createControls(document.body);
 
-function roofTop(i) {
-  return 44 + ((i * 7) % 3) * 5;
-}
-
-function drawCity(s) {
-  const { clock } = s;
-  // Sunset sky
-  ['#ff9a5a', '#f26b6b', '#c2457a', '#7a3a7a'].forEach((c, i) => {
-    ctx.fillStyle = c;
-    ctx.fillRect(0, i * 14, W, 15);
-  });
-  ctx.fillStyle = '#ffd23f';
-  ctx.beginPath(); ctx.arc(96, 40, 12, 0, Math.PI * 2); ctx.fill();
-
-  // Camera follows Spidey from roof to roof
-  const k = s.phase === 'swing' ? Math.min(1, s.t / 1100) : 0;
-  const ease = k * k * (3 - 2 * k);
-  const cam = (s.roof + ease) * GAP;
-
-  // Far skyline (moves slower)
-  ctx.fillStyle = '#4a2a5a';
-  for (let i = -1; i < 14; i++) {
-    const x = Math.round(i * 22 - (cam * 0.4) % 22);
-    const h = 18 + ((i * 13 + Math.floor(cam * 0.4 / 22)) % 4) * 6;
-    ctx.fillRect(x, H - h - 8, 18, h);
-  }
-
-  // Rooftops he swings between
-  for (let i = s.roof - 1; i <= s.roof + 2; i++) {
-    const x = Math.round(i * GAP - cam + 6);
-    const top = roofTop(i);
-    ctx.fillStyle = '#2a1f4a';
-    ctx.fillRect(x, top, 40, H - top);
-    ctx.fillStyle = '#1d1426';
-    ctx.fillRect(x - 2, top - 2, 44, 3);
-    ctx.fillStyle = '#ffd23f';
-    for (let wy = top + 5; wy < H - 4; wy += 7) {
-      for (let wx = x + 4; wx < x + 36; wx += 8) {
-        if ((wx + wy + i) % 3) ctx.fillRect(wx, wy, 4, 3);
-      }
-    }
-    // The last roof of the round has a flag
-    if (i === ROOFS) {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(x + 18, top - 14, 1, 12);
-      ctx.fillStyle = '#d62f2f';
-      ctx.fillRect(x + 19, top - 14, 8, 5);
-    }
-  }
-
-  // Spidey: standing on the roof, or swinging on a web line to the next one
-  const sp = spideySprite();
-  let sx = 18;
-  let sy = roofTop(s.roof) - 16;
-  if (s.phase === 'swing') {
-    const fromY = roofTop(s.roof) - 16;
-    const toY = roofTop(s.roof + 1) - 16;
-    // Web anchored high up, halfway between this roof and the next.
-    const ax = Math.round((s.roof + 0.5) * GAP + 26 - cam);
-    sy = Math.round(fromY + (toY - fromY) * k + Math.sin(k * Math.PI) * 14);
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(sx + 8, sy + 2); ctx.lineTo(ax, 0); ctx.stroke();
-  }
-  const bob = s.phase === 'ask' ? Math.round(Math.sin(clock / 400)) : 0;
-  ctx.drawImage(sp, sx, sy + bob, 16, 16);
-
-  if (s.phase === 'saved') {
-    ctx.fillStyle = '#ffd23f';
-    for (let i = 0; i < 10; i++) {
-      const a = clock / 300 + (i / 10) * Math.PI * 2;
-      ctx.fillRect(Math.round(sx + 8 + Math.cos(a) * 16), Math.round(sy + 8 + Math.sin(a) * 12), 2, 2);
-    }
-  }
-}
-
-// ---------------------------------------------------------------- Round
-
-let s = null;
+let g = null;
 let raf = 0;
 let last = 0;
 
-function loop(now) {
-  const dt = Math.min(50, now - last);
-  last = now;
-  if (s) {
-    s.t += dt;
-    s.clock += dt;
-    drawCity(s);
-  }
-  raf = requestAnimationFrame(loop);
-}
-
-function renderBadges() {
-  $('badge-count').textContent = `\u{1F3C5} ${save.badges}`;
-}
-
-function startRound() {
+function startLevel() {
+  const def = LEVELS[save.levels % LEVELS.length];
+  const width = 90;
+  const grid = buildLevel({ width, ground: def.buildings.map(([x, len, top]) => [x, len, top]) });
+  const palette = ['#3a2a5a', '#4a3060', '#2f3a66', '#5a2f4a'];
+  const colors = [];
+  def.buildings.forEach(([x, len], i) => { for (let c = x; c < x + len; c++) colors[c] = palette[i % palette.length]; });
+  // Over a gap, use the nearest roof so the coin floats in his jump.
+  const roofNear = (col) => [0, -1, 1, -2, 2, -3, 3].map((d) => roofRow(grid, col + d)).find((r) => r < grid.length) ?? 6;
+  const onRoof = (col, up = 0) => (roofNear(col) - 1 - up) * TILE;
+  const list = problems(save.stage, def.rescues.length);
+  const startY = onRoof(2) - 6;
+  g = {
+    def,
+    grid,
+    colors,
+    clock: 0,
+    spidey: { x: 2 * TILE, y: startY, w: 14, h: 22, vx: 0, vy: 0, face: 1, zips: 0, hurt: 0, zip: 0, climb: false, safe: { x: 2 * TILE, y: startY } },
+    bots: def.bots.map((col) => ({ x: col * TILE, y: onRoof(col) + 4, w: 16, h: 12, vx: -0.4, vy: 0, wrapped: false })),
+    tokens: def.tokens.map(([col, up]) => ({ x: col * TILE + 3, y: onRoof(col, up) + 3, w: 10, h: 10, got: false })),
+    rescues: def.rescues.map(([col, kind], i) => ({ col, kind, x: col * TILE, y: roofRow(grid, col) * TILE, done: false, gone: false, problem: list[i] })),
+    goal: { x: (def.buildings.at(-1)[0] + 5) * TILE, y: def.buildings.at(-1)[2] * TILE },
+    webs: [], // web shots
+    effects: [],
+    got: 0,
+    mistakes: 0,
+    phase: 'play',
+  };
   $('start').hidden = true;
   $('done').hidden = true;
-  $('play').hidden = false;
-  s = { list: problems(save.stage), roof: 0, t: 0, clock: 0, phase: 'ask', mistakes: 0 };
+  pad.clear();
+  renderHud();
   cancelAnimationFrame(raf);
   last = performance.now();
   raf = requestAnimationFrame(loop);
-  showProblem();
 }
+
+function renderHud() {
+  $('hud-badges').textContent = `\u{1F3C5} ${save.badges}`;
+  $('hud-tokens').textContent = `\u{1FA99} ${save.tokens + (g?.got || 0)}`;
+  $('hud-rescues').textContent = g ? `\u{1F6DF} ${g.rescues.filter((r) => r.done).length} / ${g.rescues.length}` : '';
+}
+
+function popText(text) {
+  const pop = $('pop');
+  pop.hidden = true;
+  void pop.offsetWidth;
+  pop.textContent = text;
+  pop.hidden = false;
+  setTimeout(() => { pop.hidden = true; }, 1200);
+}
+
+function burst(x, y, color, n = 10, speed = 1.5) {
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    g.effects.push({ x, y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, life: 500, color });
+  }
+}
+
+// ---------------------------------------------------------------- Update
+
+function update(f) {
+  const s = g.spidey;
+  g.clock += 16.7 * f;
+  s.hurt = Math.max(0, s.hurt - 16.7 * f);
+  s.zip = Math.max(0, s.zip - 16.7 * f);
+
+  const dir = (pad.held('right') ? 1 : 0) - (pad.held('left') ? 1 : 0);
+  if (dir) s.face = dir;
+  if (s.zip > 0) s.vx = s.face * 3.2;
+  else s.vx += (dir * 1.9 - s.vx) * 0.3 * f;
+
+  // A: jump (also hops off a wall he's climbing)
+  if (pad.take('a') && (s.onGround || s.climb)) {
+    s.vy = -5.6;
+    s.zips = 0;
+  }
+  // B: web shot on the ground, web zip in the air (twice per jump)
+  if (pad.take('b')) {
+    if (s.onGround) {
+      g.webs.push({ x: s.x + s.w / 2, y: s.y + 8, vx: s.face * 4.5, life: 600 });
+      speak('Thwip!');
+    } else if (s.zips < 2) {
+      s.zips++;
+      s.zip = 420;
+      s.vy = -4.2;
+      s.anchor = { x: s.x + s.w / 2 + s.face * 50, y: 0 };
+    }
+  }
+
+  s.vy = Math.min(MAX_FALL, s.vy + GRAVITY * f);
+  // Climbing: holding toward a wall makes him crawl up it.
+  if (s.climb && dir === s.wallDir) s.vy = -1.6;
+  s.hitWall = false;
+  const bumps = moveBody(s, g.grid, solid, f);
+  const wall = bumps.find((b) => b.side === 'left' || b.side === 'right');
+  s.climb = !!wall && !s.onGround && dir !== 0;
+  if (wall) s.wallDir = wall.side === 'right' ? 1 : -1;
+  // Starting a climb from the ground: a nudge up gets him off the roof.
+  if (wall && s.onGround && dir !== 0) { s.vy = -1.6; s.climb = true; s.wallDir = dir; }
+
+  if (s.onGround) {
+    s.zips = 0;
+    s.safe = { x: s.x, y: s.y };
+  }
+  if (s.x < 0) s.x = 0;
+  if (s.y < 0) { s.y = 0; s.vy = Math.max(0, s.vy); }
+  // Fell between buildings: a web catches him and puts him back.
+  if (s.y > VIEW_H + 30) {
+    s.x = s.safe.x; s.y = s.safe.y - 4; s.vx = 0; s.vy = 0; s.hurt = 900;
+    speak('Whoa!');
+  }
+
+  // Rescues block the way until solved.
+  for (const r of g.rescues) {
+    if (r.done) continue;
+    const wallX = r.x - 6;
+    if (s.x + s.w > wallX && s.x < r.x + 16) {
+      s.x = wallX - s.w;
+      s.vx = 0;
+      if (g.phase === 'play') openRescue(r);
+    }
+    break; // only the next one matters
+  }
+
+  // Robot bugs walk back and forth on their roof.
+  for (const b of g.bots) {
+    if (b.wrapped) continue;
+    b.vy = Math.min(MAX_FALL, b.vy + GRAVITY * f);
+    b.hitWall = false;
+    moveBody(b, g.grid, solid, f);
+    const ahead = tileAt(g.grid, Math.floor((b.x + (b.vx > 0 ? b.w + 2 : -2)) / TILE), Math.floor((b.y + b.h + 2) / TILE));
+    if (b.hitWall || (b.onGround && !solid(ahead))) b.vx = -b.vx;
+    if (s.hurt <= 0 && overlap(s, b)) {
+      s.vx = (s.x < b.x ? -1 : 1) * 2.5;
+      s.vy = -2.5;
+      s.hurt = 900;
+      speak('Oof!');
+    }
+  }
+
+  // Web shots
+  for (const w of g.webs) {
+    w.x += w.vx * f;
+    w.life -= 16.7 * f;
+    const hitBot = g.bots.find((b) => !b.wrapped && overlap({ x: w.x - 3, y: w.y - 3, w: 6, h: 6 }, b));
+    if (hitBot) {
+      hitBot.wrapped = true;
+      g.got++;
+      burst(hitBot.x + 8, hitBot.y + 6, '#ffffff', 10, 1.4);
+      renderHud();
+      w.life = 0;
+    }
+    if (solid(tileAt(g.grid, Math.floor(w.x / TILE), Math.floor(w.y / TILE)))) w.life = 0;
+  }
+  g.webs = g.webs.filter((w) => w.life > 0);
+
+  // Tokens
+  for (const t of g.tokens) {
+    if (!t.got && overlap(s, t)) {
+      t.got = true;
+      g.got++;
+      burst(t.x + 5, t.y + 5, '#ffd23f', 6, 1);
+      renderHud();
+    }
+  }
+
+  for (const p of g.effects) {
+    p.x += p.vx * f;
+    p.y += p.vy * f;
+    p.life -= 16.7 * f;
+  }
+  g.effects = g.effects.filter((p) => p.life > 0);
+
+  // Reached the top of the tallest building
+  if (s.onGround && s.x + s.w > g.goal.x - 8 && s.y < g.goal.y) finishLevel();
+}
+
+// ---------------------------------------------------------------- Rescue (math)
+
+let q = null;
 
 function bugEl(dot) {
   const b = document.createElement('button');
   b.className = dot ? 'bug dot' : 'bug';
   if (!dot) {
     const c = document.createElement('canvas');
-    c.width = c.height = 48;
-    const x = c.getContext('2d');
-    x.imageSmoothingEnabled = false;
-    x.drawImage(spookyPic('bug'), 0, 0);
+    c.width = 16;
+    c.height = 14;
+    c.getContext('2d').drawImage(botCanvas(), 0, 0);
     b.appendChild(c);
   }
-  b.setAttribute('aria-label', 'bug');
+  b.setAttribute('aria-label', 'robot bug');
   return b;
 }
 
-function showProblem() {
-  const [a, b] = s.list[s.roof];
-  s.a = a;
-  s.b = b;
-  s.sum = a + b;
-  s.pid = (s.pid || 0) + 1; // lets an old count-along stop when the problem changes
-  s.counted = 0;
-  s.tries = 0;
-  s.phase = 'ask';
-  s.t = 0;
-  $('roof-count').textContent = `${s.roof + 1} / ${ROOFS}`;
+function openRescue(r) {
+  g.phase = 'quiz';
+  pad.clear();
+  const [a, b] = r.problem;
+  q = { r, a, b, sum: a + b, counted: 0, tries: 0, pid: (q?.pid || 0) + 1, done: false };
+  $('quiz-title').textContent = RESCUE[r.kind].title;
   const dots = save.stage >= 2;
   for (const [id, n] of [['group-a', a], ['group-b', b]]) {
-    const g = $(id);
-    g.innerHTML = '';
+    const el = $(id);
+    el.innerHTML = '';
     const num = document.createElement('span');
     num.className = 'num';
     num.textContent = n;
     const bugs = document.createElement('div');
     bugs.className = 'bugs';
     for (let i = 0; i < n; i++) {
-      const el = bugEl(dots);
-      el.addEventListener('click', () => countBug(el));
-      bugs.appendChild(el);
+      const bug = bugEl(dots);
+      bug.addEventListener('click', () => countBug(bug));
+      bugs.appendChild(bug);
     }
-    g.append(num, bugs);
+    el.append(num, bugs);
   }
   const ans = $('answer');
   ans.textContent = '';
@@ -216,7 +445,7 @@ function showProblem() {
   $('sum-row').textContent = '';
   const nums = $('numbers');
   nums.innerHTML = '';
-  for (const n of numberChoices(s.sum)) {
+  for (const n of numberChoices(q.sum)) {
     const btn = document.createElement('button');
     btn.className = 'num-btn';
     btn.textContent = n;
@@ -224,100 +453,207 @@ function showProblem() {
     btn.addEventListener('click', () => choose(n, btn));
     nums.appendChild(btn);
   }
+  $('quiz').hidden = false;
+  speak(RESCUE[r.kind].title);
+  setTimeout(sayProblem, 1400);
 }
 
 // Tapping a bug counts it: "one", "two", "three"...
 function countBug(el) {
-  if (!s || el.classList.contains('counted')) return;
+  if (!q || el.classList.contains('counted')) return;
   el.classList.add('counted');
-  s.counted++;
-  speak(String(s.counted), { rate: 0.9 });
-  if (s.counted === s.sum) $('sum-row').textContent = `${s.sum} in all!`;
+  q.counted++;
+  speak(String(q.counted), { rate: 0.9 });
+  if (q.counted === q.sum) $('sum-row').textContent = `${q.sum} in all!`;
 }
 
 // Count every bug out loud, one at a time.
 async function countAll() {
-  const me = s;
-  const pid = s.pid;
+  const me = q;
   const bugs = [...document.querySelectorAll('.problem .bug')];
   bugs.forEach((b) => b.classList.remove('counted'));
-  s.counted = 0;
+  q.counted = 0;
   for (const b of bugs) {
-    if (s !== me || s.pid !== pid || s.phase !== 'ask') return;
+    if (q !== me || me.done) return;
     countBug(b);
     await sleep(700);
   }
 }
 
 function sayProblem() {
-  if (s) speak(`${s.a} plus ${s.b} is...`);
+  if (q && !q.done) speak(`${q.a} plus ${q.b} is...`);
 }
 $('btn-hear').addEventListener('click', sayProblem);
 
 async function choose(n, btn) {
-  if (!s || s.phase !== 'ask') return;
-  const key = `${s.a}+${s.b}`;
+  if (!q || q.done) return;
+  const key = `${q.a}+${q.b}`;
   const stat = (save.facts[key] ??= { right: 0, wrong: 0 });
-  if (n === s.sum) {
+  if (n === q.sum) {
     stat.right++;
     writeSave();
+    q.done = true;
     btn.classList.remove('hint');
     btn.classList.add('right');
     $('numbers').querySelectorAll('button').forEach((b) => { b.disabled = true; });
     const ans = $('answer');
-    ans.textContent = s.sum;
+    ans.textContent = q.sum;
     ans.classList.add('filled');
-    speak(`${s.a} plus ${s.b} is ${s.sum}!`);
-    await sleep(900);
-    if (!s) return;
-    // Thwip! Swing to the next roof.
-    s.phase = 'swing';
-    s.t = 0;
-    await sleep(1150);
-    if (!s) return;
-    s.roof++;
-    if (s.roof >= ROOFS) finishRound();
-    else showProblem();
+    speak(`${q.a} plus ${q.b} is ${q.sum}!`);
+    await sleep(1500);
+    // Saved! Big reward and the way opens.
+    const r = q.r;
+    r.done = true;
+    q = null;
+    $('quiz').hidden = true;
+    g.got += 3;
+    burst(r.x + 8, r.y - 12, '#ffd23f', 16, 1.8);
+    popText('Saved!');
+    speak(RESCUE[r.kind].thanks);
+    g.phase = 'play';
+    renderHud();
+    setTimeout(() => { r.gone = true; }, 1600);
   } else {
     stat.wrong++;
     writeSave();
-    s.mistakes++;
-    s.tries++;
+    g.mistakes++;
+    q.tries++;
     btn.classList.add('wrong');
     btn.disabled = true;
     speak("Let's count!");
+    const me = q;
     await sleep(900);
+    if (q !== me || me.done) return;
     await countAll();
-    if (s && s.phase === 'ask' && s.tries >= 2) $('numbers').querySelector(`[data-n="${s.sum}"]`)?.classList.add('hint');
+    if (q === me && !me.done && me.tries >= 2) $('numbers').querySelector(`[data-n="${me.sum}"]`)?.classList.add('hint');
   }
 }
 
-function finishRound() {
-  s.phase = 'saved';
-  s.t = 0;
+// ---------------------------------------------------------------- Level end
+
+async function finishLevel() {
+  g.phase = 'finish';
+  pad.clear();
+  speak('You made it to the top!');
+  for (let i = 0; i < 6; i++) {
+    burst(g.spidey.x + 7, g.spidey.y, ['#ffd23f', '#d62f2f', '#3a8bff'][i % 3], 12, 1 + i * 0.3);
+    await sleep(180);
+  }
   save.badges++;
-  // A round with only a couple of slips moves him up: sums to 10, then dots.
-  if (s.mistakes <= 2 && save.stage < 2) save.stage++;
+  save.tokens += g.got;
+  save.levels++;
+  // Two smooth levels in a row move him up: sums to 10, then dots.
+  save.streak = g.mistakes <= 1 ? save.streak + 1 : 0;
+  if (save.streak >= 2 && save.stage < 2) { save.stage++; save.streak = 0; }
   writeSave();
-  renderBadges();
+  const got = g.got;
+  g.got = 0;
+  renderHud();
   const art = $('done-art').getContext('2d');
   art.imageSmoothingEnabled = false;
   art.clearRect(0, 0, 32, 32);
   art.drawImage(spideySprite(), 0, 0);
-  $('done-text').textContent = `You got a city badge! You have ${save.badges}.`;
+  $('done-text').textContent = `${g.def.name}: ${got} tokens and a city badge! You have ${save.badges} badges.`;
   $('done').hidden = false;
+  g.phase = 'done';
   speak('You saved the city!');
 }
 
-$('btn-go').addEventListener('click', startRound);
-$('btn-again').addEventListener('click', startRound);
+// ---------------------------------------------------------------- Draw
+
+function draw() {
+  const s = g.spidey;
+  const cam = cameraX(s.x, g.grid);
+  drawSky(ctx, g.def, cam, g.clock);
+
+  const c0 = Math.floor(cam / TILE);
+  for (let r = 0; r < g.grid.length; r++) {
+    for (let c = c0; c <= c0 + VIEW_W / TILE + 1; c++) {
+      if (solid(tileAt(g.grid, c, r)) && c < g.grid[0].length) drawBuildingTile(ctx, c * TILE - cam, r * TILE, c, r, g.grid, g.colors);
+    }
+  }
+
+  // Goal flag on the tallest building
+  const fx = g.goal.x - cam;
+  ctx.fillStyle = INK; ctx.fillRect(fx, g.goal.y - 30, 2, 30);
+  ctx.fillStyle = '#d62f2f'; ctx.fillRect(fx + 2, g.goal.y - 30, 14, 9);
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(fx + 7, g.goal.y - 27, 4, 3);
+
+  for (const r of g.rescues) if (!r.gone) drawRescue(ctx, r, r.x + 8 - cam, r.y, g.clock);
+
+  // Tokens: spinning gold coins
+  for (const t of g.tokens) {
+    if (t.got) continue;
+    const w = Math.max(2, Math.abs(Math.cos(g.clock / 250 + t.x)) * 10);
+    ctx.fillStyle = INK; ctx.fillRect(Math.round(t.x + 5 - w / 2 - cam) - 1, t.y - 1, Math.round(w) + 2, 12);
+    ctx.fillStyle = '#ffd23f'; ctx.fillRect(Math.round(t.x + 5 - w / 2 - cam), t.y, Math.round(w), 10);
+  }
+
+  for (const b of g.bots) drawBot(ctx, Math.round(b.x - cam), Math.round(b.y), g.clock, b.wrapped);
+
+  // Web shots
+  ctx.fillStyle = '#ffffff';
+  for (const w of g.webs) {
+    ctx.fillRect(Math.round(w.x - cam - w.vx * 3), Math.round(w.y), Math.round(Math.abs(w.vx) * 3), 1);
+    ctx.fillRect(Math.round(w.x - cam) - 2, Math.round(w.y) - 2, 5, 5);
+  }
+
+  // Web line while zipping
+  if (s.zip > 0 && s.anchor) {
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(s.x + s.w / 2 - cam, s.y + 4); ctx.lineTo(s.anchor.x - cam, s.anchor.y); ctx.stroke();
+  }
+
+  // Spidey (blinks after a bump), leaning while climbing
+  if (!(s.hurt > 0 && Math.floor(g.clock / 80) % 2)) {
+    const run = s.onGround && Math.abs(s.vx) > 0.3 ? Math.round(Math.sin(g.clock / 60)) : 0;
+    const sx = Math.round(s.x - cam - 5);
+    const sy = Math.round(s.y - 1 + run);
+    if (s.climb) {
+      ctx.save();
+      ctx.translate(sx + 12, sy + 12);
+      ctx.rotate(-s.wallDir * 0.35);
+      ctx.drawImage(spideySprite(), -12, -12, 24, 24);
+      ctx.restore();
+    } else ctx.drawImage(spideySprite(), sx, sy, 24, 24);
+  }
+
+  for (const p of g.effects) {
+    ctx.fillStyle = p.color;
+    ctx.fillRect(Math.round(p.x - cam), Math.round(p.y), 3, 3);
+  }
+}
+
+function loop(now) {
+  const f = Math.min(3, (now - last) / 16.7);
+  last = now;
+  if (g) {
+    if (g.phase === 'play') update(f);
+    else g.clock += 16.7 * f;
+    draw();
+  }
+  raf = requestAnimationFrame(loop);
+}
+
+// ---------------------------------------------------------------- Start
+
+$('btn-go').addEventListener('click', startLevel);
+$('btn-again').addEventListener('click', startLevel);
 
 const startArt = $('start-art').getContext('2d');
 startArt.imageSmoothingEnabled = false;
 startArt.drawImage(spideySprite(), 0, 0);
-renderBadges();
+renderHud();
 
 // Testing helper: open with ?debug
 if (location.search.includes('debug')) {
-  window.__sm = { sum: () => s?.sum, phase: () => s?.phase, problem: () => s && `${s.a}+${s.b}`, save: () => save };
+  window.__sm = {
+    g: () => g,
+    sum: () => q?.sum,
+    problem: () => q && `${q.a}+${q.b}`,
+    phase: () => g?.phase,
+    save: () => save,
+    warp: (x) => { g.spidey.x = x; g.spidey.y = 0; g.spidey.vy = 0; },
+  };
 }

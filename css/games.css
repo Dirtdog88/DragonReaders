@@ -140,3 +140,102 @@ canvas.pixel { image-rendering: pixelated; image-rendering: crisp-edges; }
 @keyframes pulse { 50% { transform: scale(1.08); box-shadow: 0 0 0 10px var(--gold); } }
 @keyframes bob { 50% { transform: translateY(-8px); } }
 @keyframes wiggle { 25% { transform: rotate(-6deg); } 75% { transform: rotate(6deg); } }
+
+/* ---------- Side-scrolling adventure layout (Kirby, Spidey) ---------- */
+.adventure { padding: 0; gap: 0; justify-content: stretch; }
+.adv-hud {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: flex;
+  gap: 12px;
+}
+.hud-pill {
+  font-size: 26px;
+  font-weight: 700;
+  background: var(--ink);
+  color: #ffe14a;
+  padding: 6px 14px;
+  border-radius: 14px;
+  white-space: nowrap;
+}
+.hud-pill:empty { display: none; }
+.adv-body {
+  flex: 1;
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr);
+  align-items: center;
+  justify-items: center;
+  gap: 16px;
+  padding: 80px max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  min-height: 0;
+}
+.adv-screen { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; min-height: 0; min-width: 0; overflow: hidden; grid-column: 2; grid-row: 1; }
+.adv-screen canvas { border: 6px solid var(--ink); border-radius: 12px; image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+.adv-left, .adv-right { display: flex; gap: 14px; align-items: center; }
+.adv-left { grid-column: 1; grid-row: 1; }
+.adv-right { grid-column: 3; grid-row: 1; flex-direction: column-reverse; }
+.adv-right .row { display: flex; gap: 14px; align-items: flex-end; }
+.pad-btn {
+  width: 88px;
+  height: 88px;
+  border-radius: 22px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 40px;
+  font-weight: 700;
+  box-shadow: 0 6px 0 #000;
+  touch-action: none;
+}
+.pad-btn.pressed { transform: translateY(4px); box-shadow: 0 2px 0 #000; filter: brightness(1.4); }
+.pad-btn.round { border-radius: 50%; width: 100px; height: 100px; }
+.pad-btn.small { width: 64px; height: 64px; font-size: 28px; border-radius: 50%; }
+.pad-btn.a { background: #d94848; box-shadow: 0 6px 0 #8e2a2a; }
+.pad-btn.b { background: #3b5bab; box-shadow: 0 6px 0 #1d2a6a; }
+@media (orientation: portrait) {
+  .adv-body { grid-template-columns: 1fr 1fr; grid-template-rows: minmax(0, 1fr) auto; }
+  .adv-screen { grid-column: 1 / 3; grid-row: 1; }
+  .adv-left { grid-column: 1; grid-row: 2; }
+  .adv-right { grid-column: 2; grid-row: 2; }
+}
+
+/* Big word that pops over the game ("Fire!", "Saved!") */
+.power-pop {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(48px, 9vw, 96px);
+  font-weight: 700;
+  color: #fff;
+  -webkit-text-stroke: 3px var(--ink);
+  text-shadow: 0 6px 0 var(--ink);
+  animation: powerpop 1.2s ease-out forwards;
+  pointer-events: none;
+}
+.power-pop[hidden] { display: none; }
+@keyframes powerpop { 0% { transform: translateX(-50%) scale(0.3); opacity: 0; } 20% { transform: translateX(-50%) scale(1.15); opacity: 1; } 80% { opacity: 1; } 100% { transform: translateX(-50%) scale(1); opacity: 0; } }
+
+/* Learning interlude card */
+.quiz-card { max-width: min(96vw, 900px); }
+.quiz-row { display: flex; gap: clamp(12px, 3vw, 28px); align-items: center; justify-content: center; flex-wrap: wrap; }
+.quiz-btn {
+  min-width: clamp(130px, 18vw, 200px);
+  padding: 12px 24px 18px;
+  border-radius: 24px;
+  background: #fff;
+  color: var(--ink);
+  font-size: clamp(48px, 8vw, 84px);
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 8px 0 #9aa0a6;
+  border: 4px solid #e8e0ee;
+  transition: opacity 0.3s, transform 0.3s;
+}
+.quiz-btn.wrong { opacity: 0.2; transform: scale(0.85); }
+.quiz-btn.right { background: var(--green); color: #fff; box-shadow: 0 8px 0 #2e7d32; }
+.quiz-btn.hint { animation: pulse 0.9s ease-in-out infinite; }
