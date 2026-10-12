@@ -58,6 +58,16 @@ export const MAPS = {
         ],
       },
       {
+        // Cameo: hangs upside down by the pond and runs the missing-letter game.
+        id: 'spidey',
+        x: 22,
+        y: 6,
+        spidey: true,
+        thread: true,
+        lines: ['Hi, {name}! I am Spidey!', 'Maldred broke my web words!', 'Can you help me fix them?'],
+        again: ['Hi again, {name}!', 'Can you fix more web words?'],
+      },
+      {
         // Blocks the way to the forest until the castle dragons are caught.
         id: 'ana',
         x: 13,

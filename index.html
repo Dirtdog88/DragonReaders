@@ -94,6 +94,25 @@
         </div>
       </div>
 
+      <!-- Spidey's Web Words: fill in the missing letter -->
+      <div id="spidey" class="spidey" hidden>
+        <div class="sp-top">
+          <span id="sp-progress" class="sp-progress"></span>
+          <button id="sp-close" class="close-btn" aria-label="Close">&#10005;</button>
+        </div>
+        <canvas id="sp-canvas" width="128" height="96"></canvas>
+        <div id="sp-word" class="sp-word"></div>
+        <div id="sp-letters" class="sp-letters"></div>
+        <div id="sp-result" class="capture-result" hidden>
+          <div class="result-card">
+            <canvas id="sp-result-canvas" width="32" height="32"></canvas>
+            <p class="result-text">You fixed the web!</p>
+            <p class="result-type">Spidey says thank you!</p>
+            <button id="sp-result-ok" class="big-btn">OK</button>
+          </div>
+        </div>
+      </div>
+
       <!-- King Roland's dress-up room -->
       <div id="dressup" class="dressup" hidden>
         <div class="du-stage">

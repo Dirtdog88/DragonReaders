@@ -7,6 +7,7 @@ import { pickWildDragon, wordChoices, dragonById, dragonsIn, areaDone, unlockedA
 import { createCapture } from './capture.js';
 import { createBook } from './book.js';
 import { createDressUp } from './dressup.js';
+import { createSpidey, spideyWorldSprite } from './spidey.js';
 
 const VIEW_W = 160;
 const VIEW_H = 144;
@@ -25,7 +26,7 @@ const $ = (id) => document.getElementById(id);
 const screens = { title: $('title-screen'), name: $('name-screen'), world: $('world-screen') };
 
 const playerSprites = buildPlayerSprites();
-const npcSprites = buildNpcSprites();
+const npcSprites = { ...buildNpcSprites(), spidey: spideyWorldSprite() };
 const tiles = buildTiles();
 const input = createInput();
 
@@ -183,15 +184,24 @@ function choiceCount() {
   return save.choices || 2;
 }
 
-const book = createBook({ getCaught: () => save.caught, getMode: () => mode, getWins: () => save.maldredWins || 0, onClose: () => input.clear() });
+const book = createBook({ getCaught: () => save.caught, getMode: () => mode, getWins: () => save.maldredWins || 0, getSpidey: () => save.spidey?.wins || 0, onClose: () => input.clear() });
 const dressup = createDressUp({
   getOutfit: () => save.king || {},
   setOutfit: (o) => { save.king = o; writeSave(save); },
   onClose: () => input.clear(),
 });
 
+const spidey = createSpidey({
+  getProgress: () => save.spidey || {},
+  setProgress: (p) => { save.spidey = p; writeSave(save); },
+  onDone: ({ won }) => {
+    input.clear();
+    if (won) openDialogue(['Thanks, {name}!', 'You are a web hero!']);
+  },
+});
+
 $('btn-book').addEventListener('click', () => {
-  if (capture.isActive() || dressup.isOpen() || flash || warp || dialogue) return;
+  if (capture.isActive() || dressup.isOpen() || spidey.isOpen() || flash || warp || dialogue) return;
   book.open();
 });
 
@@ -267,6 +277,11 @@ function battleRoundDone(round) {
 }
 
 function talkTo(npc) {
+  if (npc.spidey) {
+    const lines = save.spidey?.wins && npc.again ? npc.again : npc.lines;
+    openDialogue(lines, {}, () => spidey.open());
+    return;
+  }
   if (npc.dressup) {
     openDialogue(npc.lines, {}, () => dressup.open());
     return;
@@ -333,7 +348,7 @@ $('dialogue-speak').addEventListener('pointerdown', (e) => {
 });
 
 function update(dt) {
-  if (capture.isActive() || book.isOpen() || dressup.isOpen()) return;
+  if (capture.isActive() || book.isOpen() || dressup.isOpen() || spidey.isOpen()) return;
   if (flash) {
     flash.t += dt;
     if (flash.t >= FLASH_MS) {
@@ -437,6 +452,11 @@ function render(time) {
 
   for (const npc of visibleNpcs()) {
     const s = npcSprites[npc.sprite || npc.id];
+    if (npc.thread) {
+      // Spidey's web thread up to the top of the screen.
+      ctx.fillStyle = '#e8ecf4';
+      ctx.fillRect(npc.x * TILE - camX + 7, 0, 1, Math.max(0, npc.y * TILE - camY + 2));
+    }
     if (s) ctx.drawImage(s, npc.x * TILE - camX, npc.y * TILE - camY);
   }
 
@@ -500,6 +520,7 @@ if (location.search.includes('debug')) {
     encounter: beginEncounter,
     save: () => save,
     answer: () => capture.answer(),
+    letter: () => spidey.answer(),
     give(ids) { for (const id of ids) if (!save.caught.includes(id)) save.caught.push(id); writeSave(save); },
     warp(mapId, x, y) { moveTo(mapId, x, y, 'down'); },
   };

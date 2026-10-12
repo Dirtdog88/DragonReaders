@@ -3,10 +3,11 @@
 
 import { DRAGONS, DRAGON_SIZE, dragonSprite, answerFor } from './dragons.js';
 import { speak } from './speech.js';
+import { spideySprite } from './spidey.js';
 
 const $ = (id) => document.getElementById(id);
 
-export function createBook({ getCaught, getMode, getWins, onClose }) {
+export function createBook({ getCaught, getMode, getWins, getSpidey, onClose }) {
   const el = $('book');
   const grid = $('book-grid');
   const detail = $('book-detail');
@@ -34,6 +35,22 @@ export function createBook({ getCaught, getMode, getWins, onClose }) {
       if (has) cell.addEventListener('click', () => showDetail(d));
       grid.appendChild(cell);
     }
+    // Spidey's sticker card, earned by finishing a round of web words.
+    const webWins = getSpidey?.() || 0;
+    if (webWins) {
+      const cell = document.createElement('button');
+      cell.className = 'book-cell spidey-cell';
+      const c = document.createElement('canvas');
+      c.width = c.height = 32;
+      const ctx = c.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(spideySprite(), 0, 0);
+      const label = document.createElement('span');
+      label.textContent = `Spidey \u00d7${webWins}`;
+      cell.append(c, label);
+      cell.addEventListener('click', () => showSticker(webWins));
+      grid.appendChild(cell);
+    }
     detail.hidden = true;
     el.hidden = false;
   }
@@ -48,6 +65,18 @@ export function createBook({ getCaught, getMode, getWins, onClose }) {
     $('detail-type').textContent = `${d.type} Dragon`;
     current = { ...d, answer: answerFor(d, getMode()) };
     $('detail-word').textContent = current.answer;
+    detail.hidden = false;
+  }
+
+  function showSticker() {
+    const ctx = $('detail-canvas').getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, DRAGON_SIZE, DRAGON_SIZE);
+    ctx.drawImage(spideySprite(), 0, 0, 32, 32, 0, 0, 64, 64);
+    $('detail-name').textContent = 'Spidey';
+    $('detail-type').textContent = 'Web Friend';
+    current = { answer: 'web' };
+    $('detail-word').textContent = 'web';
     detail.hidden = false;
   }
 

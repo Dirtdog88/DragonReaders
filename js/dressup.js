@@ -291,7 +291,7 @@ export function drawKing(ctx, outfit) {
 }
 
 // Crop an item to its pixels and fit it in a tile picture.
-function drawThumb(canvas, id) {
+export function drawThumb(canvas, id) {
   const src = itemLayer(id);
   const data = src.getContext('2d').getImageData(0, 0, S, S).data;
   let x0 = S; let y0 = S; let x1 = 0; let y1 = 0;
