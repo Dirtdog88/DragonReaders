@@ -19,7 +19,16 @@ reading skill.
 |---|---|---|
 | Dragon Readers (built) | Letter sounds, picture → word | Catch dragons by reading the word that matches them. |
 | Halloween: Pumpkin Patch | Blending CVC words | Trick-or-treat down a spooky street. Each door shows a word on glowing letter pumpkins; tap each to hear its sound, then pick the picture (cat, bat, hat, web, rat, bug, pot, fog) to get candy. Friendly monsters, no scares. |
-| Kirby: Dream Land Words | Sight words | Kirby floats through the sky. "Find **the**!" He taps the star with that word and Kirby inhales it. Wrong stars bounce off. |
+| Kirby: Dream Land Words | Sight words | Kirby floats through the sky. "Find **the**!" Each sight word floats on an enemy; he taps the right one, Kirby inhales it and **copies its power** (see below). Wrong enemies get spat out harmlessly. |
+
+## Kirby copy abilities (added 2026-10-12)
+
+His favorite part of Kirby is absorbing powers, so it drives the game:
+
+- Inhaling the right word-enemy turns Kirby into that power: new look and color, star burst, and the power's name pops up and is spoken ("Fire!").
+- 8 abilities: Fire (flame crown), Ice (frosty cap), Sword (green cap + sword), Spark (lightning spikes), Stone (turns to rock), Beam (jester hat), Bomb (black cap), Wing (feathered headband).
+- Each level ends at a treasure block that Kirby breaks with whatever power he is holding (melt, slash, zap, smash) for a shower of stars.
+- **Ability Book:** a collection card for every power copied, with its name to read.
 
 ## Arcade home page
 
