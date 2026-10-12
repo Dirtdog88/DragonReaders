@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#140d2a">
+  <title>Pumpkin Patch</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/games.css">
+  <link rel="stylesheet" href="css/halloween.css">
+</head>
+<body>
+  <main class="page spooky">
+    <a href="./" class="home-btn" aria-label="Back to the arcade">&#8962;</a>
+    <div class="top-right">
+      <span class="candy-count" id="candy-count">&#127852; 0</span>
+    </div>
+
+    <!-- Start -->
+    <section id="start" class="start">
+      <h1 class="spooky-title">Pumpkin Patch</h1>
+      <canvas id="start-art" class="pixel" width="32" height="32"></canvas>
+      <button id="btn-go" class="big-btn">Trick or treat!</button>
+    </section>
+
+    <!-- The street -->
+    <section id="street" class="street" hidden>
+      <div class="door-count" id="door-count"></div>
+      <canvas id="scene" class="pixel" width="128" height="96"></canvas>
+      <div class="word-row">
+        <div id="pumpkins" class="pumpkins"></div>
+        <button id="btn-sounds" class="speak-btn" aria-label="Hear the sounds">&#128264;</button>
+      </div>
+      <div id="pictures" class="pictures"></div>
+    </section>
+
+    <!-- End of the night -->
+    <div id="done" class="overlay" hidden>
+      <div class="card">
+        <canvas id="done-art" class="pixel" width="32" height="32"></canvas>
+        <h2>Happy Halloween!</h2>
+        <p id="done-text"></p>
+        <div class="card-buttons">
+          <button id="btn-again" class="big-btn">Again!</button>
+          <a href="./" class="big-btn home-link">&#8962;</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="js/halloween.js"></script>
+</body>
+</html>
