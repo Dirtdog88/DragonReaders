@@ -591,3 +591,21 @@ button {
 .sp-letter-btn.hint { animation: pulse 0.9s ease-in-out infinite; }
 #sp-result-canvas { width: 160px; height: 160px; image-rendering: pixelated; }
 .spidey-cell { background: #ffe9e9; }
+
+/* ---------- Back to the arcade ---------- */
+.home-btn {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--ink);
+  color: var(--gold);
+  font-size: 34px;
+  line-height: 56px;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: 0 4px 0 #000;
+}

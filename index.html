@@ -6,152 +6,39 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Dragon Readers">
-  <meta name="theme-color" content="#2b1d3a">
-  <title>Dragon Readers</title>
+  <meta name="apple-mobile-web-app-title" content="Reading Arcade">
+  <meta name="theme-color" content="#140d1f">
+  <title>Reading Arcade</title>
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!-- Andika is designed for beginning readers (simple a and g shapes). -->
   <link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/games.css">
+  <link rel="stylesheet" href="css/arcade.css">
 </head>
 <body>
-  <div id="app">
-    <!-- Title screen -->
-    <section id="title-screen" class="screen">
-      <h1 class="logo">Dragon<br>Readers</h1>
-      <div class="title-dragon" aria-hidden="true"></div>
-      <div class="mode-switch" role="radiogroup" aria-label="Game mode">
-        <button class="mode-btn" data-mode="words" role="radio">&#128214; Words</button>
-        <button class="mode-btn" data-mode="colors" role="radio">&#127912; Colors</button>
-      </div>
-      <div class="title-buttons">
-        <button id="btn-continue" class="big-btn" hidden>Play</button>
-        <button id="btn-new" class="big-btn">New Game</button>
-      </div>
-    </section>
-
-    <!-- Name entry -->
-    <section id="name-screen" class="screen" hidden>
-      <h2 class="prompt">What is your name?</h2>
-      <div id="name-slots" class="name-slots"></div>
-      <div id="letter-grid" class="letter-grid"></div>
-      <div class="name-actions">
-        <button id="btn-back" class="big-btn small">&#9003; Back</button>
-        <button id="btn-done" class="big-btn small" disabled>Done &#10003;</button>
-      </div>
-    </section>
-
-    <!-- World -->
-    <section id="world-screen" class="screen" hidden>
-      <div class="console">
-        <div class="pad-area left">
-          <div class="dpad" id="dpad">
-            <button class="dpad-btn up" data-dir="up" aria-label="Up"></button>
-            <button class="dpad-btn left" data-dir="left" aria-label="Left"></button>
-            <div class="dpad-center"></div>
-            <button class="dpad-btn right" data-dir="right" aria-label="Right"></button>
-            <button class="dpad-btn down" data-dir="down" aria-label="Down"></button>
-          </div>
-        </div>
-        <div class="screen-frame">
-          <canvas id="game" width="160" height="144"></canvas>
-          <div id="dialogue" class="dialogue" hidden>
-            <p id="dialogue-text"></p>
-            <button id="dialogue-speak" class="speak-btn" aria-label="Hear it">&#128264;</button>
-            <span class="dialogue-next" aria-hidden="true">&#9660;</span>
-          </div>
-        </div>
-        <div class="pad-area right">
-          <div class="right-buttons">
-            <button id="btn-a" class="ab-btn" aria-label="A">A</button>
-            <button id="btn-book" class="book-btn" aria-label="Dragon Book">&#128214;</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Dragon Book: every dragon he has caught -->
-      <div id="book" class="book" hidden>
-        <div class="book-head">
-          <h2>Dragon Book <span id="book-count" class="book-count"></span></h2>
-          <button id="book-close" class="close-btn" aria-label="Close">&#10005;</button>
-        </div>
-        <div id="book-grid" class="book-grid"></div>
-        <div id="book-detail" class="book-detail" hidden>
-          <div class="detail-card">
-            <canvas id="detail-canvas" width="64" height="64"></canvas>
-            <p id="detail-name" class="detail-name"></p>
-            <p id="detail-type" class="detail-type"></p>
-            <div class="detail-word-row">
-              <p id="detail-word" class="detail-word"></p>
-              <button id="detail-speak" class="speak-btn big" aria-label="Hear it">&#128264;</button>
-            </div>
-            <button id="detail-close" class="big-btn small">OK</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Spidey's Web Words: fill in the missing letter -->
-      <div id="spidey" class="spidey" hidden>
-        <div class="sp-top">
-          <span id="sp-progress" class="sp-progress"></span>
-          <button id="sp-close" class="close-btn" aria-label="Close">&#10005;</button>
-        </div>
-        <canvas id="sp-canvas" width="128" height="96"></canvas>
-        <div id="sp-word" class="sp-word"></div>
-        <div id="sp-letters" class="sp-letters"></div>
-        <div id="sp-result" class="capture-result" hidden>
-          <div class="result-card">
-            <canvas id="sp-result-canvas" width="32" height="32"></canvas>
-            <p class="result-text">You fixed the web!</p>
-            <p class="result-type">Spidey says thank you!</p>
-            <button id="sp-result-ok" class="big-btn">OK</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- King Roland's dress-up room -->
-      <div id="dressup" class="dressup" hidden>
-        <div class="du-stage">
-          <div id="du-wish" class="du-wish" hidden>
-            <p id="du-wish-text"></p>
-            <button id="du-wish-speak" class="speak-btn big" aria-label="Hear it">&#128264;</button>
-          </div>
-          <canvas id="du-king" width="64" height="64"></canvas>
-        </div>
-        <div class="du-panel">
-          <div class="du-top">
-            <button id="du-wish-btn" class="du-btn">&#128081; Wish</button>
-            <button id="du-random" class="du-btn" aria-label="Silly outfit">&#127922;</button>
-            <button id="du-close" class="close-btn" aria-label="Close">&#10005;</button>
-          </div>
-          <div id="du-tabs" class="du-tabs"></div>
-          <div id="du-items" class="du-items"></div>
-        </div>
-      </div>
-
-      <!-- Capture: read the word that matches the dragon -->
-      <div id="capture" class="capture" hidden>
-        <div class="capture-stage">
-          <canvas id="capture-canvas" width="128" height="96"></canvas>
-          <button id="capture-run" class="run-btn" aria-label="Run away">&#127939; Run</button>
-        </div>
-        <div id="capture-words" class="capture-words"></div>
-        <div id="capture-result" class="capture-result" hidden>
-          <div class="result-card">
-            <canvas id="result-canvas" width="64" height="64"></canvas>
-            <p id="result-text" class="result-text"></p>
-            <p id="result-type" class="result-type"></p>
-            <button id="result-ok" class="big-btn">OK</button>
-          </div>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <script type="module" src="js/main.js"></script>
+  <main class="page arcade">
+    <h1 class="neon">Reading Arcade</h1>
+    <div class="cabinets">
+      <a class="cabinet dragon" href="dragon.html">
+        <div class="marquee">dragons</div>
+        <div class="screen"><canvas id="art-dragon" class="pixel" width="64" height="64"></canvas></div>
+        <div class="progress" id="prog-dragon"></div>
+      </a>
+      <a class="cabinet spooky" href="halloween.html">
+        <div class="marquee">pumpkins</div>
+        <div class="screen"><canvas id="art-spooky" class="pixel" width="32" height="32"></canvas></div>
+        <div class="progress" id="prog-spooky"></div>
+      </a>
+      <a class="cabinet kirby" href="kirby.html">
+        <div class="marquee">Kirby</div>
+        <div class="screen"><canvas id="art-kirby" class="pixel" width="32" height="32"></canvas></div>
+        <div class="progress" id="prog-kirby"></div>
+      </a>
+    </div>
+  </main>
+  <script type="module" src="js/arcade.js"></script>
 </body>
 </html>

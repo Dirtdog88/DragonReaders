@@ -1,6 +1,6 @@
 {
-  "name": "Dragon Readers",
-  "short_name": "Dragon Readers",
+  "name": "Reading Arcade",
+  "short_name": "Reading Arcade",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

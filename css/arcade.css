@@ -1,0 +1,81 @@
+/* The arcade hall: neon sign and a glowing cabinet per game. */
+body { background: #140d1f; }
+
+.arcade {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(155, 93, 229, 0.35), transparent 60%),
+    repeating-linear-gradient(45deg, #1b1229 0 24px, #20152f 24px 48px);
+  gap: clamp(16px, 4vh, 40px);
+}
+
+.neon {
+  margin: 0;
+  font-size: clamp(44px, 8vw, 88px);
+  line-height: 1;
+  color: #fff;
+  text-align: center;
+  text-shadow: 0 0 6px #ff7eb6, 0 0 16px #ff3b9a, 0 0 32px #ff3b9a;
+  animation: flicker 4s infinite;
+}
+@keyframes flicker { 0%, 92%, 100% { opacity: 1; } 94% { opacity: 0.6; } 96% { opacity: 1; } 98% { opacity: 0.75; } }
+
+.cabinets {
+  display: flex;
+  gap: clamp(14px, 3vw, 36px);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.cabinet {
+  --glow: #f5c542;
+  width: clamp(200px, 27vw, 280px);
+  border-radius: 22px 22px 10px 10px;
+  background: linear-gradient(#3d2a52, #2b1d3a);
+  border: 6px solid var(--glow);
+  box-shadow: 0 0 18px var(--glow), inset 0 0 12px rgba(0, 0, 0, 0.5), 0 10px 0 #0c0714;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px 18px;
+  text-decoration: none;
+  color: var(--paper);
+  transition: transform 0.15s;
+}
+.cabinet:active { transform: translateY(6px) scale(0.98); }
+.cabinet.dragon { --glow: #f5c542; }
+.cabinet.spooky { --glow: #ff8c1a; }
+.cabinet.kirby { --glow: #ff7eb6; }
+
+.marquee {
+  width: 100%;
+  text-align: center;
+  font-size: clamp(30px, 4vw, 42px);
+  font-weight: 700;
+  padding: 4px 0 8px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: var(--glow);
+  text-shadow: 0 0 10px var(--glow);
+}
+
+.screen {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 16px;
+  background: radial-gradient(circle, #2f3f8f, #121a40);
+  border: 6px solid #0c0714;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.cabinet.spooky .screen { background: radial-gradient(circle, #5a2a6a, #1a0f24); }
+.cabinet.kirby .screen { background: radial-gradient(circle, #9fd3ff, #3a8bff); }
+.screen canvas { width: 82%; height: 82%; animation: bob 1.8s ease-in-out infinite; }
+
+.progress {
+  font-size: clamp(22px, 3vw, 28px);
+  font-weight: 700;
+  min-height: 1.3em;
+}
