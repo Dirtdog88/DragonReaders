@@ -8,6 +8,11 @@ import { createCapture } from './capture.js';
 import { createBook } from './book.js';
 import { createDressUp } from './dressup.js';
 import { createSpidey, spideyWorldSprite } from './spidey.js';
+import { sfx } from './sfx.js';
+import { music } from './music.js';
+import { mountSoundButton } from './audio.js';
+import { fitPixelCanvas } from './screen.js';
+import './offline.js';
 
 const VIEW_W = 160;
 const VIEW_H = 144;
@@ -21,6 +26,8 @@ const STREAK_TO_THREE = 5; // first-try catches in a row before a third word app
 const MISSES_TO_TWO = 2; // catches in a row with a retry before going back to two
 const MALDRED_HEARTS = 5;
 const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+// Background music per area.
+const AREA_MUSIC = { bracken: 'castle', throne: 'castle', forest: 'castle', cave: 'cave', volcano: 'volcano', tower: 'volcano' };
 
 const $ = (id) => document.getElementById(id);
 const screens = { title: $('title-screen'), name: $('name-screen'), world: $('world-screen') };
@@ -45,8 +52,17 @@ function show(name) {
 function setupTitle() {
   $('title-screen').querySelector('.title-dragon').style.backgroundImage =
     `url(${playerSprites.down[0].toDataURL()})`;
-  $('btn-continue').addEventListener('click', () => startWorld());
-  $('btn-new').addEventListener('click', () => openNameScreen());
+  $('btn-continue').addEventListener('click', () => { sfx.select(); startWorld(); });
+  // A save is precious: ask before starting over.
+  $('btn-new').addEventListener('click', () => {
+    sfx.select();
+    if (save) $('confirm').hidden = false;
+    else openNameScreen();
+  });
+  $('confirm-keep').addEventListener('click', () => { sfx.select(); $('confirm').hidden = true; });
+  $('confirm-new').addEventListener('click', () => { sfx.select(); $('confirm').hidden = true; openNameScreen(); });
+  mountSoundButton($('title-screen'));
+  music.play('castle');
   document.querySelectorAll('.mode-btn').forEach((b) => b.addEventListener('click', () => {
     mode = b.dataset.mode;
     writeMode(mode);
@@ -99,18 +115,21 @@ function setupNameScreen() {
     b.addEventListener('click', () => {
       if (typed.length >= MAX_NAME) return;
       typed += letter;
-      speak(letter.toLowerCase(), { rate: 0.9 });
+      sfx.select();
+      speak(letter.toLowerCase(), { rate: 0.9, now: true });
       renderName();
     });
     grid.appendChild(b);
   }
   $('btn-back').addEventListener('click', () => {
+    sfx.select();
     if (!typed) { show('title'); return; }
     typed = typed.slice(0, -1);
     renderName();
   });
   $('btn-done').addEventListener('click', () => {
     if (!typed) return;
+    sfx.right();
     const name = typed[0] + typed.slice(1).toLowerCase();
     save = newSave(name, mode);
     writeSave(save);
@@ -159,6 +178,7 @@ const capture = createCapture({
 
 function beginEncounter(forceId) {
   flash = { t: 0, forceId };
+  sfx.flash();
   input.clear();
 }
 
@@ -202,6 +222,7 @@ const spidey = createSpidey({
 
 $('btn-book').addEventListener('click', () => {
   if (capture.isActive() || dressup.isOpen() || spidey.isOpen() || flash || warp || dialogue) return;
+  sfx.select();
   book.open();
 });
 
@@ -220,6 +241,7 @@ function startWorld() {
   };
   input.clear();
   show('world');
+  music.play(AREA_MUSIC[map.id] || 'castle');
   // First visit: Griffith greets the new Dragon Master.
   if (!save.metGriffith) {
     save.metGriffith = true;
@@ -252,6 +274,7 @@ function npcAt(x, y) {
 function startBattle() {
   const order = [...save.caught].sort(() => Math.random() - 0.5);
   battle = { hearts: MALDRED_HEARTS, order, i: 0 };
+  music.play('volcano');
   nextBattleRound();
 }
 
@@ -264,9 +287,10 @@ function nextBattleRound() {
 
 function battleRoundDone(round) {
   input.clear();
-  if (round.fled) { battle = null; return; }
+  if (round.fled) { battle = null; music.play(AREA_MUSIC[map.id]); return; }
   if (round.won) {
     battle = null;
+    music.play(AREA_MUSIC[map.id]);
     save.maldredWins = (save.maldredWins || 0) + 1;
     writeSave(save);
     openDialogue(VICTORY_LINES);
@@ -305,6 +329,7 @@ function moveTo(mapId, x, y, dir) {
   Object.assign(player, { x, y, dir, moving: false, t: 0 });
   Object.assign(save, { map: mapId, x, y, dir });
   writeSave(save);
+  music.play(AREA_MUSIC[mapId] || 'castle');
 }
 
 function walkable(x, y) {
@@ -319,6 +344,7 @@ function openDialogue(lines, vars = {}, onClose = null) {
 
 function advanceDialogue() {
   if (!dialogue) return;
+  sfx.talk();
   dialogue.i++;
   if (dialogue.i >= dialogue.lines.length) {
     const done = dialogue.onClose;
@@ -344,7 +370,7 @@ $('dialogue').addEventListener('pointerdown', (e) => {
 $('dialogue-speak').addEventListener('pointerdown', (e) => {
   e.preventDefault();
   e.stopPropagation();
-  if (dialogue) speak(dialogue.lines[dialogue.i]);
+  if (dialogue) speak(dialogue.lines[dialogue.i], { now: true });
 });
 
 function update(dt) {
@@ -388,6 +414,7 @@ function update(dt) {
     const exit = map.exits?.find((e) => e.x === player.x && e.y === player.y);
     if (exit) {
       warp = { t: 0, exit, moved: false };
+      sfx.warp();
       return;
     }
     if (ENCOUNTER_TILES.has(tileAt(map, player.x, player.y))) {
@@ -457,7 +484,9 @@ function render(time) {
       ctx.fillStyle = '#e8ecf4';
       ctx.fillRect(npc.x * TILE - camX + 7, 0, 1, Math.max(0, npc.y * TILE - camY + 2));
     }
-    if (s) ctx.drawImage(s, npc.x * TILE - camX, npc.y * TILE - camY);
+    // Idle: each NPC does a tiny hop every few seconds, out of step with the others.
+    const hop = (time + npc.x * 400) % 3200 < 160 ? -1 : 0;
+    if (s) ctx.drawImage(s, npc.x * TILE - camX, npc.y * TILE - camY + hop);
   }
 
   // Alternate legs on each step, like the old games.
@@ -497,9 +526,7 @@ function resize() {
   const portrait = window.innerHeight > window.innerWidth;
   const availW = portrait ? window.innerWidth - 48 : window.innerWidth - 2 * 200;
   const availH = portrait ? window.innerHeight * 0.58 : window.innerHeight - 48;
-  const scale = Math.max(1, Math.min(availW / VIEW_W, availH / VIEW_H));
-  canvas.style.width = `${Math.floor(VIEW_W * scale)}px`;
-  canvas.style.height = `${Math.floor(VIEW_H * scale)}px`;
+  fitPixelCanvas(canvas, availW, availH);
 }
 window.addEventListener('resize', () => { if (currentScreen === 'world') resize(); });
 

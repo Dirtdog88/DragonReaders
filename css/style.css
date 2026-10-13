@@ -1,3 +1,7 @@
+/* Andika, self-hosted so the games work offline. */
+@font-face { font-family: "Andika"; font-style: normal; font-weight: 400; font-display: swap; src: url("../fonts/andika-400.woff2") format("woff2"); }
+@font-face { font-family: "Andika"; font-style: normal; font-weight: 700; font-display: swap; src: url("../fonts/andika-700.woff2") format("woff2"); }
+
 :root {
   --bg: #2b1d3a;
   --bg-2: #3d2a52;
@@ -251,8 +255,7 @@ button {
 .capture-stage { position: relative; }
 #capture-canvas {
   display: block;
-  width: min(94vw, calc(60vh * 4 / 3));
-  aspect-ratio: 4 / 3;
+  /* Size is set by JS in whole pixels (js/screen.js). */
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   border: 8px solid var(--ink);
@@ -442,6 +445,36 @@ button {
   opacity: 0.7;
 }
 .mode-btn.selected { background: var(--paper); color: var(--ink); opacity: 1; }
+#title-screen .sound-btn { position: absolute; top: 12px; right: 12px; z-index: 5; }
+
+/* Start over? */
+.confirm {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(29, 20, 38, 0.75);
+  padding: 16px;
+}
+.confirm[hidden] { display: none; }
+.confirm-card {
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 24px;
+  padding: 24px 36px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: pop 0.3s ease-out;
+  text-align: center;
+}
+.confirm-text { margin: 0; font-size: clamp(32px, 5vw, 48px); font-weight: 700; }
+.confirm-sub { margin: 0 0 12px; font-size: clamp(20px, 3vw, 28px); color: #6d5a80; }
+.confirm-buttons { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+.big-btn.danger { background: var(--red); color: #fff; box-shadow: 0 6px 0 #8e2a2a; }
 
 /* ---------- King Roland's dress-up room ---------- */
 .dressup {
@@ -552,8 +585,7 @@ button {
 }
 .sp-progress { font-size: 26px; font-weight: 700; color: var(--gold); }
 #sp-canvas {
-  width: min(80vw, calc(46vh * 4 / 3));
-  aspect-ratio: 4 / 3;
+  /* Size is set by JS in whole pixels (js/screen.js). */
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   border: 8px solid var(--ink);
@@ -609,3 +641,29 @@ button {
   text-decoration: none;
   box-shadow: 0 4px 0 #000;
 }
+
+/* ---------- Shared: sound button, star bursts ---------- */
+/* Pixel canvases are sized by JS in whole device pixels; the border must not eat into that. */
+canvas { box-sizing: content-box; }
+.sound-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--ink);
+  color: var(--gold);
+  font-size: 28px;
+  box-shadow: 0 4px 0 #000;
+}
+.sound-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #000; }
+.fx-star {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: fxstar 0.75s ease-out forwards;
+}
+@keyframes fxstar {
+  to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.3); opacity: 0; }
+}
+.fx-shake { animation: fxshake 0.4s; }
+@keyframes fxshake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }

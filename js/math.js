@@ -6,6 +6,11 @@
 import { speak } from './speech.js';
 import { spideySprite } from './spidey.js';
 import { spookyPic } from './art.js';
+import { sfx } from './sfx.js';
+import { music } from './music.js';
+import { mountSoundButton } from './audio.js';
+import { burstStars } from './fx.js';
+import './offline.js';
 import {
   TILE, VIEW_W, VIEW_H, GRAVITY, MAX_FALL,
   createControls, buildLevel, tileAt, moveBody, overlap, cameraX, fitCanvas,
@@ -297,15 +302,17 @@ function update(f) {
   if (pad.take('a') && (s.onGround || s.climb)) {
     s.vy = -5.6;
     s.zips = 0;
+    sfx.jump();
   }
   // B: web shot on the ground, web zip in the air (twice per jump)
   if (pad.take('b')) {
     if (s.onGround) {
       g.webs.push({ x: s.x + s.w / 2, y: s.y + 8, vx: s.face * 4.5, life: 600 });
-      speak('Thwip!');
+      sfx.thwip();
     } else if (s.zips < 2) {
       s.zips++;
       s.zip = 420;
+      sfx.zip();
       s.vy = -4.2;
       s.anchor = { x: s.x + s.w / 2 + s.face * 50, y: 0 };
     }
@@ -331,7 +338,7 @@ function update(f) {
   // Fell between buildings: a web catches him and puts him back.
   if (s.y > VIEW_H + 30) {
     s.x = s.safe.x; s.y = s.safe.y - 4; s.vx = 0; s.vy = 0; s.hurt = 900;
-    speak('Whoa!');
+    sfx.whoa();
   }
 
   // Rescues block the way until solved.
@@ -358,7 +365,7 @@ function update(f) {
       s.vx = (s.x < b.x ? -1 : 1) * 2.5;
       s.vy = -2.5;
       s.hurt = 900;
-      speak('Oof!');
+      sfx.oof();
     }
   }
 
@@ -370,6 +377,7 @@ function update(f) {
     if (hitBot) {
       hitBot.wrapped = true;
       g.got++;
+      sfx.wrap();
       burst(hitBot.x + 8, hitBot.y + 6, '#ffffff', 10, 1.4);
       renderHud();
       w.life = 0;
@@ -383,6 +391,7 @@ function update(f) {
     if (!t.got && overlap(s, t)) {
       t.got = true;
       g.got++;
+      sfx.coin();
       burst(t.x + 5, t.y + 5, '#ffd23f', 6, 1);
       renderHud();
     }
@@ -454,7 +463,8 @@ function openRescue(r) {
     nums.appendChild(btn);
   }
   $('quiz').hidden = false;
-  speak(RESCUE[r.kind].title);
+  sfx.talk();
+  speak(RESCUE[r.kind].title, { now: true });
   setTimeout(sayProblem, 1400);
 }
 
@@ -463,7 +473,8 @@ function countBug(el) {
   if (!q || el.classList.contains('counted')) return;
   el.classList.add('counted');
   q.counted++;
-  speak(String(q.counted), { rate: 0.9 });
+  sfx.hint();
+  speak(String(q.counted), { rate: 0.9, now: true });
   if (q.counted === q.sum) $('sum-row').textContent = `${q.sum} in all!`;
 }
 
@@ -499,7 +510,9 @@ async function choose(n, btn) {
     const ans = $('answer');
     ans.textContent = q.sum;
     ans.classList.add('filled');
-    speak(`${q.a} plus ${q.b} is ${q.sum}!`);
+    sfx.right();
+    burstStars(btn);
+    speak(`${q.a} plus ${q.b} is ${q.sum}!`, { now: true });
     await sleep(1500);
     // Saved! Big reward and the way opens.
     const r = q.r;
@@ -509,6 +522,7 @@ async function choose(n, btn) {
     g.got += 3;
     burst(r.x + 8, r.y - 12, '#ffd23f', 16, 1.8);
     popText('Saved!');
+    sfx.saved();
     speak(RESCUE[r.kind].thanks);
     g.phase = 'play';
     renderHud();
@@ -520,7 +534,8 @@ async function choose(n, btn) {
     q.tries++;
     btn.classList.add('wrong');
     btn.disabled = true;
-    speak("Let's count!");
+    sfx.wrong();
+    speak("Let's count!", { now: true });
     const me = q;
     await sleep(900);
     if (q !== me || me.done) return;
@@ -556,6 +571,7 @@ async function finishLevel() {
   $('done-text').textContent = `${g.def.name}: ${got} tokens and a city badge! You have ${save.badges} badges.`;
   $('done').hidden = false;
   g.phase = 'done';
+  sfx.clear();
   speak('You saved the city!');
 }
 
@@ -607,16 +623,20 @@ function draw() {
 
   // Spidey (blinks after a bump), leaning while climbing
   if (!(s.hurt > 0 && Math.floor(g.clock / 80) % 2)) {
-    const run = s.onGround && Math.abs(s.vx) > 0.3 ? Math.round(Math.sin(g.clock / 60)) : 0;
+    const running = s.onGround && Math.abs(s.vx) > 0.3;
+    const run = running ? Math.round(Math.sin(g.clock / 60)) : 0;
+    const step = running ? (Math.floor(g.clock / 100) % 2 ? 1 : -1) : 0;
     const sx = Math.round(s.x - cam - 5);
     const sy = Math.round(s.y - 1 + run);
-    if (s.climb) {
-      ctx.save();
-      ctx.translate(sx + 12, sy + 12);
-      ctx.rotate(-s.wallDir * 0.35);
-      ctx.drawImage(spideySprite(), -12, -12, 24, 24);
-      ctx.restore();
-    } else ctx.drawImage(spideySprite(), sx, sy, 24, 24);
+    const img = spideySprite();
+    ctx.save();
+    ctx.translate(sx + 12, sy + 12);
+    if (s.climb) ctx.rotate(-s.wallDir * 0.35);
+    else if (!s.onGround) ctx.rotate(s.face * Math.max(-0.25, Math.min(0.25, s.vy / 16))); // leans into jumps
+    // Body, then the legs shuffling while he runs.
+    ctx.drawImage(img, 0, 0, 32, 23, -12, -12, 24, 17);
+    ctx.drawImage(img, 0, 23, 32, 9, -12 + step, 5, 24, 7);
+    ctx.restore();
   }
 
   for (const p of g.effects) {
@@ -638,13 +658,15 @@ function loop(now) {
 
 // ---------------------------------------------------------------- Start
 
-$('btn-go').addEventListener('click', startLevel);
-$('btn-again').addEventListener('click', startLevel);
+$('btn-go').addEventListener('click', () => { sfx.select(); startLevel(); });
+$('btn-again').addEventListener('click', () => { sfx.select(); startLevel(); });
 
 const startArt = $('start-art').getContext('2d');
 startArt.imageSmoothingEnabled = false;
 startArt.drawImage(spideySprite(), 0, 0);
 renderHud();
+mountSoundButton(document.querySelector('.top-right'));
+music.play('city');
 
 // Testing helper: open with ?debug
 if (location.search.includes('debug')) {

@@ -4,6 +4,11 @@
 
 import { speak } from './speech.js';
 import { drawKirby, kirbyCanvas, enemyCanvas, ABILITIES } from './art.js';
+import { sfx } from './sfx.js';
+import { music } from './music.js';
+import { mountSoundButton } from './audio.js';
+import { burstStars } from './fx.js';
+import './offline.js';
 import {
   TILE, VIEW_W, VIEW_H, GRAVITY, MAX_FALL,
   createControls, buildLevel, extract, tileAt, moveBody, overlap, cameraX, fitCanvas,
@@ -98,7 +103,7 @@ const LEVELS = [
     theme: 'castle',
     width: 84,
     ground: [[0, 24], [27, 22], [52, 32]],
-    plats: [[7, 4, 3, 'B'], [15, 3, 4, 'B'], [30, 4, 5, 'B'], [44, 4, 3, 'B'], [57, 3, 5, 'B']],
+    plats: [[7, 4, 3, '='], [15, 3, 4, '='], [30, 4, 5, '='], [44, 4, 3, '='], [57, 3, 5, '=']],
     put: [
       [2, 6, 'S'], ...door(20), ...door(41), ...door(70),
       [6, 6, 'g'], [12, 6, 'f'], [17, 2, 'b'], [29, 6, 'i'], [35, 6, 'p'], [46, 3, 's'], [55, 6, 'o'], [60, 2, 'w'], [76, 6, 'f'],
@@ -142,8 +147,8 @@ function drawTile(ctx, ch, x, y, grid, col, row, theme) {
     if (top) { R(0, 0, 16, 4, th.top); R(0, 4, 16, 1, '#1d1426'); }
   } else if (ch === '=') {
     R(0, 2, 16, 10, '#1d1426');
-    R(1, 3, 14, 8, theme === 'grass' ? '#c08a4a' : '#ffffff');
-    R(1, 3, 14, 3, theme === 'grass' ? '#6cc25a' : '#e8f4ff');
+    R(1, 3, 14, 8, theme === 'grass' ? '#c08a4a' : theme === 'castle' ? '#7a808b' : '#ffffff');
+    R(1, 3, 14, 3, theme === 'grass' ? '#6cc25a' : theme === 'castle' ? '#b9bec8' : '#e8f4ff');
   } else if (ch === '?' || ch === 'u') {
     R(0, 0, 16, 16, '#1d1426');
     R(1, 1, 14, 14, ch === '?' ? '#f5c542' : '#9a6a34');
@@ -213,7 +218,7 @@ function startLevel() {
     def,
     grid,
     clock: 0,
-    kirby: { x: start.x, y: start.y - 8, w: 20, h: 22, vx: 0, vy: 0, face: 1, puffs: 0, hurt: 0, attack: 0, dash: 0, safe: { x: start.x, y: start.y - 8 } },
+    kirby: { x: start.x, y: start.y - 8, w: 20, h: 22, vx: 0, vy: 0, face: 1, puffs: 0, hurt: 0, attack: 0, dash: 0, squash: 0, wasOnGround: true, inhaleT: 0, safe: { x: start.x, y: start.y - 8 } },
     ability: save.ability,
     enemies: marks.filter((m) => ENEMY_CHARS.includes(m.ch)).map((m) => ({
       type: ENEMY_POWER[m.ch], x: m.x, y: m.y - 2, w: 18, h: 18, vx: -0.35, vy: 0, baseY: m.y, alive: true, fly: m.ch === 'w',
@@ -265,6 +270,7 @@ function gainPower(type) {
   writeSave();
   const ab = ABILITIES.find((a) => a.id === type);
   popText(`${ab.name}!`);
+  sfx.power();
   speak(`${ab.name}!`);
   burst(g.kirby.x + 10, g.kirby.y + 10, '#ffe14a', 12, 1.2);
   renderHud();
@@ -278,6 +284,7 @@ function update(f) {
   k.hurt = Math.max(0, k.hurt - 16.7 * f);
   k.attack = Math.max(0, k.attack - 16.7 * f);
   k.dash = Math.max(0, k.dash - 16.7 * f);
+  k.squash = Math.max(0, k.squash - 16.7 * f);
 
   // Moving
   const dir = (pad.held('right') ? 1 : 0) - (pad.held('left') ? 1 : 0);
@@ -289,7 +296,7 @@ function update(f) {
 
   // Jump on the ground, puff up in the air (Kirby can fly a little), float down.
   if (pad.take('a')) {
-    if (k.onGround) { k.vy = -5; k.puffs = 0; } else if (k.puffs < 6) { k.vy = -2.6; k.puffs++; }
+    if (k.onGround) { k.vy = -5; k.puffs = 0; k.squash = 120; sfx.jump(); } else if (k.puffs < 6) { k.vy = -2.6; k.puffs++; sfx.puff(); }
   }
   k.vy = Math.min(MAX_FALL, k.vy + GRAVITY * f);
   if (pad.held('a') && k.vy > 0.9 && !k.onGround) k.vy = 0.9;
@@ -297,6 +304,7 @@ function update(f) {
   // Drop the power to inhale a new one
   if (pad.take('drop') && g.ability) {
     burst(k.x + 10, k.y + 4, '#ffffff', 8, 1);
+    sfx.drop();
     g.ability = null;
     save.ability = null;
     writeSave();
@@ -312,6 +320,8 @@ function update(f) {
     if (b.ch === '?' && b.side === 'up') hitBlock(b.col, b.row);
     if (b.ch === 'D' && (b.side === 'left' || b.side === 'right')) openDoor(b.col);
   }
+  if (k.onGround && !k.wasOnGround) k.squash = 140; // landing
+  k.wasOnGround = k.onGround;
   if (k.onGround) {
     k.puffs = 0;
     const under = tileAt(g.grid, Math.floor((k.x + k.w / 2) / TILE), Math.floor((k.y + k.h + 1) / TILE));
@@ -322,6 +332,7 @@ function update(f) {
   // Fell into a gap: pop back to the last safe spot.
   if (k.y > VIEW_H + 40) {
     k.x = k.safe.x; k.y = k.safe.y - 4; k.vx = 0; k.vy = 0; k.hurt = 900;
+    sfx.whoa();
   }
 
   // Power attack hitbox
@@ -361,7 +372,7 @@ function update(f) {
       k.vx = (k.x < e.x ? -1 : 1) * 2.5;
       k.vy = -2.5;
       k.hurt = 900;
-      speak('Oof!');
+      sfx.oof();
     }
   }
 
@@ -375,6 +386,7 @@ function update(f) {
     const hitEnemy = g.enemies.some((e) => e.alive && overlap({ x: b.x - 3, y: b.y - 3, w: 6, h: 6 }, e));
     if (b.t <= 0 || hitGround || hitEnemy) {
       b.done = true;
+      sfx.bomb();
       blast({ x: b.x - 22, y: b.y - 22, w: 44, h: 44 }, 'bomb');
       burst(b.x, b.y, '#ff8c1a', 14, 2);
     }
@@ -386,6 +398,7 @@ function update(f) {
     if (!it.got && overlap(k, it)) {
       it.got = true;
       g.got++;
+      sfx.coin();
       burst(it.x + 6, it.y + 6, '#ffe14a', 6, 1);
       renderHud();
     }
@@ -405,6 +418,8 @@ function update(f) {
 
 function inhale() {
   const k = g.kirby;
+  k.inhaleT -= 16.7;
+  if (k.inhaleT <= 0) { k.inhaleT = 220; sfx.inhale(); }
   for (const e of g.enemies) {
     if (!e.alive) continue;
     const dx = (e.x + e.w / 2) - (k.x + k.w / 2);
@@ -423,10 +438,15 @@ function usePower() {
   if (ab === 'bomb') {
     g.bombs.push({ x: k.x + k.w / 2, y: k.y, vx: k.face * 2.4, vy: -3, t: 900 });
     k.attack = 0;
+    sfx.pop();
   } else if (ab === 'wing' || ab === 'sword') {
+    sfx.attack();
     if (ab === 'wing') k.dash = 300;
   } else if (ab === 'stone' && !k.onGround) {
     k.vy = 6;
+    sfx.drop();
+  } else {
+    sfx.attack();
   }
 }
 
@@ -464,6 +484,7 @@ function blast(box, ab) {
     if (e.alive && overlap(box, e)) {
       e.alive = false;
       g.got++;
+      sfx.pop();
       burst(e.x + 9, e.y + 9, '#ffffff', 8, 1.4);
       renderHud();
     }
@@ -474,6 +495,7 @@ function blast(box, ab) {
       if (ch === '?') hitBlock(c, r);
       else if (ch === 'B' || (ch === 'I' && ab === 'fire')) {
         g.grid[r][c] = '.';
+        sfx.breakBlock();
         burst(c * TILE + 8, r * TILE + 8, ch === 'I' ? '#bfe8ff' : '#d9774a', 6, 1.2);
       }
     }
@@ -484,6 +506,7 @@ function blast(box, ab) {
 function hitBlock(col, row) {
   if (g.grid[row][col] !== '?') return;
   g.grid[row][col] = 'u';
+  sfx.block();
   g.items.push({ x: col * TILE + 2, y: (row - 1) * TILE + 2, w: 12, h: 12, got: false });
   burst(col * TILE + 8, row * TILE, '#ffe14a', 6, 1);
 }
@@ -510,11 +533,12 @@ function openDoor(col) {
     row.appendChild(b);
   }
   $('quiz').hidden = false;
+  sfx.talk();
   setTimeout(sayWord, 300);
 }
 
 function sayWord() {
-  if (quiz) speak(`Find... ${quiz.word}!`);
+  if (quiz) speak(`Find... ${quiz.word}!`, { now: true });
 }
 $('quiz-say').addEventListener('click', sayWord);
 
@@ -526,9 +550,12 @@ async function answer(w, btn) {
     quiz.done = true;
     btn.classList.remove('hint');
     btn.classList.add('right');
-    speak(`${quiz.word}! The door is open!`);
+    sfx.right();
+    burstStars(btn);
+    speak(`${quiz.word}! The door is open!`, { now: true });
     await sleep(1200);
     // Open the door and give a big reward.
+    sfx.door();
     for (let r = 0; r < g.grid.length; r++) if (g.grid[r][quiz.col] === 'D') g.grid[r][quiz.col] = '.';
     burst(quiz.col * TILE + 8, 6 * TILE, '#ff7eb6', 14, 1.8);
     g.got += 3;
@@ -542,7 +569,8 @@ async function answer(w, btn) {
     quiz.tries++;
     btn.classList.add('wrong');
     btn.disabled = true;
-    speak('Try again!');
+    sfx.wrong();
+    speak('Try again!', { now: true });
     if (quiz.tries >= 2) $('quiz-words').querySelector(`[data-word="${quiz.word}"]`)?.classList.add('hint');
     setTimeout(sayWord, 900);
   }
@@ -560,6 +588,7 @@ async function finishLevel() {
   // Kirby uses his power on the treasure block
   for (let i = 0; i < 6; i++) {
     burst(g.treasure.x + 8, g.treasure.y + 8, ab?.color || '#ffe14a', 10, 1 + i * 0.3);
+    sfx.breakBlock();
     await sleep(180);
   }
   g.treasure = null;
@@ -574,6 +603,7 @@ async function finishLevel() {
   $('clear').hidden = false;
   g.phase = 'clear';
   renderHud();
+  sfx.clear();
   speak('Level clear!');
 }
 
@@ -617,7 +647,7 @@ function draw() {
     if (!e.alive) continue;
     const img = enemyCanvas(e.type);
     const ex = Math.round(e.x - cam - 3);
-    const ey = Math.round(e.y - 6);
+    const ey = Math.round(e.y - 6 + (e.fly ? 0 : Math.abs(Math.sin(g.clock / 160 + e.x)) * -1.5));
     if (e.vx > 0 && !e.fly) {
       ctx.save(); ctx.translate(ex + 24, ey); ctx.scale(-1, 1); ctx.drawImage(img, 0, 0); ctx.restore();
     } else ctx.drawImage(img, ex, ey);
@@ -634,11 +664,7 @@ function draw() {
     const inhaling = !g.ability && pad.held('b') && g.phase === 'play';
     const kx = Math.round(k.x - cam - 6);
     const ky = Math.round(k.y - 9);
-    if (k.face < 0) {
-      ctx.save(); ctx.translate(kx + 32, ky); ctx.scale(-1, 1);
-      drawKirby(ctx, 0, 0, g.ability, { inhale: inhaling });
-      ctx.restore();
-    } else drawKirby(ctx, kx, ky, g.ability, { inhale: inhaling });
+    drawHero(kx, ky, inhaling);
   }
 
   // Particles
@@ -648,6 +674,29 @@ function draw() {
     else if (p.star) star(ctx, p.x - cam, p.y, 2.5);
     else ctx.fillRect(Math.round(p.x - cam), Math.round(p.y), 3, 3);
   }
+}
+
+// Kirby with a walk cycle (feet shuffle) and squash-and-stretch on jumps and landings.
+const heroBuf = document.createElement('canvas');
+heroBuf.width = heroBuf.height = 32;
+const heroCtx = heroBuf.getContext('2d');
+function drawHero(kx, ky, inhaling) {
+  const k = g.kirby;
+  heroCtx.clearRect(0, 0, 32, 32);
+  drawKirby(heroCtx, 0, 0, g.ability, { inhale: inhaling });
+  const walking = k.onGround && Math.abs(k.vx) > 0.3;
+  const step = walking ? (Math.floor(g.clock / 110) % 2 ? 1 : -1) : 0;
+  let sx = 1;
+  let sy = 1;
+  if (k.squash > 0) { sx = 1.15; sy = 0.85; } // taking off or landing
+  else if (!k.onGround && k.vy < -2) { sx = 0.92; sy = 1.1; } // stretching up
+  ctx.save();
+  ctx.translate(kx + 16, ky + 32);
+  ctx.scale(k.face < 0 ? -sx : sx, sy);
+  // Body, then the feet nudged left/right in turn.
+  ctx.drawImage(heroBuf, 0, 0, 32, 25, -16, -32, 32, 25);
+  ctx.drawImage(heroBuf, 0, 25, 32, 7, -16 + step, -7, 32, 7);
+  ctx.restore();
 }
 
 // A big, easy-to-see shape for each power while it's being used.
@@ -728,25 +777,28 @@ function openBook() {
     const label = document.createElement('span');
     label.textContent = has ? ab.name : '?';
     card.append(c, label);
-    if (has) card.addEventListener('click', () => speak(ab.name));
+    if (has) card.addEventListener('click', () => speak(ab.name, { now: true }));
     grid.appendChild(card);
   }
   if (g && g.phase === 'play') g.phase = 'book';
   $('book').hidden = false;
 }
-$('btn-book').addEventListener('click', openBook);
+$('btn-book').addEventListener('click', () => { sfx.select(); openBook(); });
 $('book-close').addEventListener('click', () => {
+  sfx.select();
   $('book').hidden = true;
   if (g && g.phase === 'book') g.phase = 'play';
   pad.clear();
 });
-$('btn-play').addEventListener('click', startLevel);
-$('btn-next').addEventListener('click', startLevel);
+$('btn-play').addEventListener('click', () => { sfx.select(); startLevel(); });
+$('btn-next').addEventListener('click', () => { sfx.select(); startLevel(); });
 
 const startArt = $('start-art').getContext('2d');
 startArt.imageSmoothingEnabled = false;
 startArt.drawImage(kirbyCanvas(save.ability), 0, 0);
 $('hud-stars').textContent = `⭐ ${save.stars}`;
+mountSoundButton(document.querySelector('.top-right'));
+music.play('dreamland');
 
 // Testing helper: open with ?debug
 if (location.search.includes('debug')) {

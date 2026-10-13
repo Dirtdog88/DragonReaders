@@ -12,10 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!-- Andika is designed for beginning readers (simple a and g shapes). -->
-  <link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Andika (self-hosted in fonts/) is designed for beginning readers: simple a and g shapes. -->
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -32,6 +29,17 @@
       <div class="title-buttons">
         <button id="btn-continue" class="big-btn" hidden>Play</button>
         <button id="btn-new" class="big-btn">New Game</button>
+      </div>
+      <!-- Asked before a new game wipes a save -->
+      <div id="confirm" class="confirm" hidden>
+        <div class="confirm-card">
+          <p class="confirm-text">Start over?</p>
+          <p class="confirm-sub">Your dragons will go back to the wild.</p>
+          <div class="confirm-buttons">
+            <button id="confirm-keep" class="big-btn small">Keep playing</button>
+            <button id="confirm-new" class="big-btn small danger">Start over</button>
+          </div>
+        </div>
       </div>
     </section>
 

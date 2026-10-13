@@ -5,6 +5,13 @@
 import { speak } from './speech.js';
 import { buildPlayerSprites } from './sprites.js';
 import { spookyPic, monsterCanvas, MONSTERS, pumpkinCanvas } from './art.js';
+import { sayLetterSound, loadLetterSounds } from './letters.js';
+import { sfx } from './sfx.js';
+import { music } from './music.js';
+import { mountSoundButton } from './audio.js';
+import { burstStars } from './fx.js';
+import { keepFit } from './screen.js';
+import './offline.js';
 
 const $ = (id) => document.getElementById(id);
 const W = 128;
@@ -14,13 +21,7 @@ const SAVE_KEY = 'arcade-halloween-v1';
 
 const WORDS = ['cat', 'bat', 'hat', 'rat', 'web', 'bug', 'pot', 'fog', 'log', 'mug'];
 
-// The iPad voice reads letter names, so each letter gets a spelled-out sound.
-// Stretchy sounds are held (mmm), quick ones get a short "uh".
-const SOUNDS = {
-  a: 'aah', b: 'buh', c: 'kuh', d: 'duh', e: 'eh', f: 'fff', g: 'guh', h: 'huh', i: 'ih',
-  j: 'juh', k: 'kuh', l: 'lll', m: 'mmm', n: 'nnn', o: 'aw', p: 'puh', r: 'rrr', s: 'sss',
-  t: 'tuh', u: 'uh', w: 'wuh', z: 'zzz',
-};
+// Letter sounds come from js/letters.js: recordings when present, else the voice.
 
 const HOUSE_COLORS = ['#3a2a6a', '#2a4a5a', '#4a2a4a', '#2a3a5a', '#4a3a2a', '#2a4a3a', '#3a2a5a', '#5a2a3a'];
 
@@ -67,6 +68,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const canvas = $('scene');
 const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
+keepFit(canvas, () => [window.innerWidth * 0.86 - 16, window.innerHeight * 0.42 - 16]);
 
 const STARS = Array.from({ length: 22 }, (_, i) => [(i * 37) % W, (i * 19) % 40]);
 
@@ -116,7 +118,7 @@ function drawScene(state) {
 
   // Houses slide by while walking to the next door.
   const k = state.phase === 'walk' ? Math.min(1, state.t / 900) : 1;
-  const x = 24 - Math.round(k * 0) + Math.round((1 - k) * 110);
+  const x = 24 + Math.round((1 - k) * 110);
   if (state.phase === 'walk' && state.door > 0) {
     drawHouse(24 - Math.round(k * 110), HOUSE_COLORS[(state.door - 1) % HOUSE_COLORS.length], false);
   }
@@ -178,6 +180,7 @@ function renderCandy() {
 }
 
 async function startNight() {
+  sfx.select();
   $('start').hidden = true;
   $('done').hidden = true;
   $('street').hidden = false;
@@ -202,6 +205,7 @@ async function nextDoor() {
   s.monster = s.monsters[s.door % s.monsters.length];
   s.phase = 'ask';
   s.t = 0;
+  sfx.knock();
   speak('Trick or treat!');
   showWord(s.words[s.door]);
 }
@@ -219,7 +223,7 @@ function showWord(word) {
     b.addEventListener('click', () => {
       b.classList.add('lit');
       setTimeout(() => b.classList.remove('lit'), 500);
-      speak(SOUNDS[letter] || letter, { rate: 0.7 });
+      sayLetterSound(letter);
     });
     row.appendChild(b);
   });
@@ -251,8 +255,8 @@ async function sayTheSounds() {
   for (const [i, letter] of [...s.word].entries()) {
     if (state !== s || s.phase !== 'ask') return;
     btns[i]?.classList.add('lit');
-    speak(SOUNDS[letter] || letter, { rate: 0.7 });
-    await sleep(750);
+    const ms = sayLetterSound(letter);
+    await sleep(ms);
     btns[i]?.classList.remove('lit');
   }
 }
@@ -267,7 +271,10 @@ async function choose(word, btn) {
     btn.classList.remove('hint');
     btn.classList.add('right');
     $('pictures').querySelectorAll('button').forEach((b) => { b.disabled = true; });
-    speak(s.word);
+    sfx.right();
+    burstStars(btn);
+    speak(s.word, { now: true });
+    setTimeout(sfx.candy, 700);
     s.phase = 'treat';
     s.t = 0;
     s.got++;
@@ -285,12 +292,13 @@ async function choose(word, btn) {
     s.mistakes++;
     btn.classList.add('wrong');
     btn.disabled = true;
+    sfx.wrong();
     // Gentle retry: sound it out again, and after two misses show the answer.
     const row = $('pumpkins');
     row.classList.remove('nudge');
     void row.offsetWidth;
     row.classList.add('nudge');
-    speak('Try again!');
+    speak('Try again!', { now: true });
     await sleep(900);
     if (state === s && s.phase === 'ask') {
       await sayTheSounds();
@@ -310,6 +318,7 @@ function finishNight() {
   art.drawImage(pumpkinCanvas(), 0, 0);
   $('done-text').textContent = `You got ${s.got} candy! You have ${save.candy} in all.`;
   $('done').hidden = false;
+  sfx.clear();
   speak('Happy Halloween!');
 }
 
@@ -321,6 +330,9 @@ const startArt = $('start-art').getContext('2d');
 startArt.imageSmoothingEnabled = false;
 startArt.drawImage(pumpkinCanvas(), 0, 0);
 renderCandy();
+mountSoundButton(document.querySelector('.top-right'));
+music.play('spooky');
+loadLetterSounds();
 
 // Testing helper: open with ?debug
 if (location.search.includes('debug')) {

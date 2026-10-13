@@ -4,6 +4,8 @@
 
 import { dragonSprite, dragonById, pixelate } from './dragons.js';
 import { speak } from './speech.js';
+import { sfx } from './sfx.js';
+import { burstStars } from './fx.js';
 
 const S = 64; // the king is drawn on a 64x64 pixel canvas
 const $ = (id) => document.getElementById(id);
@@ -368,16 +370,20 @@ export function createDressUp({ getOutfit, setOutfit, onClose }) {
     const o = outfit();
     o[item.cat] = o[item.cat] === item.id ? null : item.id;
     setOutfit(o);
-    speak(item.word);
+    sfx.pop();
+    speak(item.word, { now: true });
     renderKing(true);
     renderItems();
     if (wish && o[item.cat] === item.id) {
       if (item.id === wish.id) {
         wish = null;
         showBubble('Thank you!', true);
+        sfx.right();
+        burstStars(wishEl);
         setTimeout(() => speak('Thank you!'), 700);
         setTimeout(() => { if (!wish) wishEl.hidden = true; }, 2200);
       } else {
+        sfx.wrong();
         wishEl.classList.remove('nope');
         void wishEl.offsetWidth;
         wishEl.classList.add('nope');
@@ -395,6 +401,7 @@ export function createDressUp({ getOutfit, setOutfit, onClose }) {
     const o = outfit();
     const options = ITEMS.filter((i) => o[i.cat] !== i.id && i.id !== wish?.id);
     wish = options[Math.floor(Math.random() * options.length)];
+    sfx.talk();
     showBubble(`I want the ${wish.word}!`);
   }
 
@@ -405,15 +412,17 @@ export function createDressUp({ getOutfit, setOutfit, onClose }) {
       // Usually wear something, sometimes nothing.
       o[c.id] = Math.random() < 0.85 ? choices[Math.floor(Math.random() * choices.length)].id : null;
     }
+    sfx.power();
     setOutfit(o);
     renderKing(true);
     renderItems();
   }
 
   $('du-wish-btn').addEventListener('click', makeWish);
-  $('du-wish-speak').addEventListener('click', () => speak($('du-wish-text').textContent));
+  $('du-wish-speak').addEventListener('click', () => speak($('du-wish-text').textContent, { now: true }));
   $('du-random').addEventListener('click', randomOutfit);
   $('du-close').addEventListener('click', () => {
+    sfx.select();
     el.hidden = true;
     wish = null;
     wishEl.hidden = true;

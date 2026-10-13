@@ -1,3 +1,7 @@
+/* Andika, self-hosted so the games work offline. */
+@font-face { font-family: "Andika"; font-style: normal; font-weight: 400; font-display: swap; src: url("../fonts/andika-400.woff2") format("woff2"); }
+@font-face { font-family: "Andika"; font-style: normal; font-weight: 700; font-display: swap; src: url("../fonts/andika-700.woff2") format("woff2"); }
+
 /* Shared look for the arcade and the newer games (Halloween, Kirby). */
 :root {
   --bg: #2b1d3a;
@@ -239,3 +243,29 @@ canvas.pixel { image-rendering: pixelated; image-rendering: crisp-edges; }
 .quiz-btn.wrong { opacity: 0.2; transform: scale(0.85); }
 .quiz-btn.right { background: var(--green); color: #fff; box-shadow: 0 8px 0 #2e7d32; }
 .quiz-btn.hint { animation: pulse 0.9s ease-in-out infinite; }
+
+/* ---------- Shared: sound button, star bursts ---------- */
+/* Pixel canvases are sized by JS in whole device pixels; the border must not eat into that. */
+canvas { box-sizing: content-box; }
+.sound-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--ink);
+  color: var(--gold);
+  font-size: 28px;
+  box-shadow: 0 4px 0 #000;
+}
+.sound-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #000; }
+.fx-star {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: fxstar 0.75s ease-out forwards;
+}
+@keyframes fxstar {
+  to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.3); opacity: 0; }
+}
+.fx-shake { animation: fxshake 0.4s; }
+@keyframes fxshake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }

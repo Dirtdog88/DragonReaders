@@ -26,8 +26,7 @@ body { background: #140d2a; }
 .street[hidden] { display: none; }
 .door-count { font-size: 24px; font-weight: 700; color: #ffb000; min-height: 1.2em; }
 #scene {
-  width: min(86vw, calc(42vh * 4 / 3));
-  aspect-ratio: 4 / 3;
+  /* Size is set by JS in whole pixels (js/screen.js). */
   border: 8px solid var(--ink);
   border-radius: 12px;
 }

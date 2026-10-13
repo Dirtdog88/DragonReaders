@@ -166,13 +166,15 @@ function px(ctx, x, y, w, h, color) {
 }
 
 // Four-legged dragon, facing left. Wings unless wings === false.
-function drawWinged(ctx, c, wings = true) {
+// `up` is the second animation frame: wings raised (or the ridge lifted).
+function drawWinged(ctx, c, wings = true, up = false) {
   // Wing behind the body
   if (wings) {
-    poly(ctx, [[36, 34], [43, 8], [50, 14], [57, 6], [61, 26], [48, 37]], c.dark);
-    stroke(ctx, [[40, 33], [43, 9]], 2, c.main);
-    stroke(ctx, [[44, 34], [50, 14]], 2, c.main);
-    stroke(ctx, [[48, 35], [57, 7]], 2, c.main);
+    const lift = up ? 6 : 0;
+    poly(ctx, [[36, 34], [41, 8 - lift], [49, 13 - lift], [55, 4 - lift], [61, 24 - lift], [48, 37]], c.dark);
+    stroke(ctx, [[40, 33], [41, 9 - lift]], 2, c.main);
+    stroke(ctx, [[44, 34], [49, 13 - lift]], 2, c.main);
+    stroke(ctx, [[48, 35], [55, 5 - lift]], 2, c.main);
   } else {
     // Rocky ridge instead of wings
     for (const [x, y] of [[34, 32], [40, 31], [46, 33], [51, 37]]) poly(ctx, [[x - 4, y + 3], [x, y - 6], [x + 4, y + 3]], c.dark);
@@ -202,13 +204,14 @@ function drawWinged(ctx, c, wings = true) {
 }
 
 // Long snake-like dragon (Worm, Shu). Optional fins for water dragons.
-function drawSerpent(ctx, c, fins) {
+// `sway` shifts the body wave for the second animation frame.
+function drawSerpent(ctx, c, fins, sway = 0) {
   // Body: a chain of circles from tail tip to neck, growing thicker.
   const path = [];
   for (let i = 0; i <= 40; i++) {
     const t = i / 40;
-    const x = 60 - t * 38 + Math.sin(t * Math.PI * 2) * 4;
-    const y = 58 - t * 30 + Math.sin(t * Math.PI * 1.5) * 8;
+    const x = 60 - t * 38 + Math.sin(t * Math.PI * 2 + sway) * 4;
+    const y = 58 - t * 30 + Math.sin(t * Math.PI * 1.5 + sway) * 8;
     path.push([x, y, 2.5 + t * 6]);
   }
   if (fins) {
@@ -268,18 +271,24 @@ function drawFace(ctx, c, shape) {
 
 const cache = new Map();
 
-// Returns { normal, white, dark } canvases. `white` is a silhouette used for the catch flash.
+// Returns { normal, flap, white, dark } canvases. `flap` is the second animation
+// frame; `white` is a silhouette used for the catch flash.
 export function dragonSprite(dragon) {
   if (cache.has(dragon.id)) return cache.get(dragon.id);
   const size = DRAGON_SIZE;
   const c = dragon.colors;
-  const normal = document.createElement('canvas');
-  normal.width = normal.height = size;
-  const ctx = normal.getContext('2d');
-  if (dragon.shape === 'serpent') drawSerpent(ctx, c, dragon.fins);
-  else drawWinged(ctx, c, dragon.wings !== false);
-  pixelate(ctx, size, [c.main, c.light, c.dark, HORN]);
-  drawFace(ctx, c, dragon.shape);
+  const frame = (second) => {
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = size;
+    const ctx = cv.getContext('2d');
+    if (dragon.shape === 'serpent') drawSerpent(ctx, c, dragon.fins, second ? 0.5 : 0);
+    else drawWinged(ctx, c, dragon.wings !== false, second);
+    pixelate(ctx, size, [c.main, c.light, c.dark, HORN]);
+    drawFace(ctx, c, dragon.shape);
+    return cv;
+  };
+  const normal = frame(false);
+  const flap = frame(true);
 
   const white = document.createElement('canvas');
   white.width = white.height = size;
@@ -298,7 +307,7 @@ export function dragonSprite(dragon) {
   k.fillStyle = '#120c1a';
   k.fillRect(0, 0, size, size);
 
-  const out = { normal, white, dark };
+  const out = { normal, flap, white, dark };
   cache.set(dragon.id, out);
   return out;
 }
@@ -330,7 +339,7 @@ const TOO_CLOSE = [
   ['ash', 'gas'], ['ash', 'ice'], ['ash', 'rock'], ['ash', 'silver'], ['pop', 'boom'], ['pop', 'zap'],
   ['glow', 'sun'], ['glow', 'gold'], ['glow', 'moon'], ['glow', 'zap'], ['glow', 'lava'], ['lava', 'pop'],
   // Colors mode: shades that are easy to mix up on these dragons.
-  ['red', 'orange'], ['orange', 'yellow'], ['orange', 'brown'], ['blue', 'purple'],
+  ['red', 'orange'], ['orange', 'yellow'], ['blue', 'purple'],
   ['gray', 'white'], ['gray', 'blue'], ['gray', 'brown'], ['white', 'blue'],
   ['black', 'gray'], ['black', 'brown'], ['black', 'purple'],
 ];

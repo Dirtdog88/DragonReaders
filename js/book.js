@@ -4,6 +4,7 @@
 import { DRAGONS, DRAGON_SIZE, dragonSprite, answerFor } from './dragons.js';
 import { speak } from './speech.js';
 import { spideySprite } from './spidey.js';
+import { sfx } from './sfx.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -32,7 +33,7 @@ export function createBook({ getCaught, getMode, getWins, getSpidey, onClose }) 
       const label = document.createElement('span');
       label.textContent = has ? d.name : '?';
       cell.append(c, label);
-      if (has) cell.addEventListener('click', () => showDetail(d));
+      if (has) cell.addEventListener('click', () => { sfx.select(); showDetail(d); });
       grid.appendChild(cell);
     }
     // Spidey's sticker card, earned by finishing a round of web words.
@@ -48,7 +49,7 @@ export function createBook({ getCaught, getMode, getWins, getSpidey, onClose }) 
       const label = document.createElement('span');
       label.textContent = `Spidey \u00d7${webWins}`;
       cell.append(c, label);
-      cell.addEventListener('click', () => showSticker(webWins));
+      cell.addEventListener('click', () => { sfx.select(); showSticker(webWins); });
       grid.appendChild(cell);
     }
     detail.hidden = true;
@@ -80,9 +81,10 @@ export function createBook({ getCaught, getMode, getWins, getSpidey, onClose }) 
     detail.hidden = false;
   }
 
-  $('detail-speak').addEventListener('click', () => { if (current) speak(current.answer); });
-  $('detail-close').addEventListener('click', () => { detail.hidden = true; current = null; });
+  $('detail-speak').addEventListener('click', () => { if (current) speak(current.answer, { now: true }); });
+  $('detail-close').addEventListener('click', () => { sfx.select(); detail.hidden = true; current = null; });
   $('book-close').addEventListener('click', () => {
+    sfx.select();
     el.hidden = true;
     onClose?.();
   });

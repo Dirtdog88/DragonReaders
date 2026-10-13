@@ -3,6 +3,9 @@
 
 import { dragonSprite, DRAGON_SIZE, pixelate } from './dragons.js';
 import { speak } from './speech.js';
+import { sfx } from './sfx.js';
+import { burstStars } from './fx.js';
+import { keepFit } from './screen.js';
 
 const W = 128;
 const H = 96;
@@ -13,6 +16,8 @@ const GEM_X = DX + DRAGON_SIZE / 2;
 const GEM_Y = 84;
 const APPEAR_MS = 450;
 const CATCH_MS = 1400;
+const FLAP_MS = 420; // wing flap / tail sway frame length
+const SHAKE_MS = 350; // screen shake when the Dragon Stone grabs the dragon
 // Battle against Maldred
 const HIT_MS = 1300; // beam, impact, then the next dragon
 const DEFEAT_MS = 1600;
@@ -529,6 +534,8 @@ export function createCapture({ onDone, onAnswer }) {
   const canvas = $('capture-canvas');
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
+  // Whole-pixel scaling, leaving room for the 8px border.
+  keepFit(canvas, () => [window.innerWidth * 0.94 - 16, window.innerHeight * 0.6 - 16]);
   const wordsEl = $('capture-words');
   const resultEl = $('capture-result');
 
@@ -584,7 +591,9 @@ export function createCapture({ onDone, onAnswer }) {
       btn.classList.remove('hint');
       btn.classList.add('right');
       wordsEl.querySelectorAll('.word-btn').forEach((b) => { b.disabled = true; });
-      speak(word);
+      sfx.right();
+      burstStars(btn);
+      speak(word, { now: true });
       s.phase = s.battle ? 'hit' : 'catch';
       s.t = 0;
     } else {
@@ -593,8 +602,9 @@ export function createCapture({ onDone, onAnswer }) {
       btn.disabled = true;
       s.wiggle = 500;
       s.mistakes++;
+      if (s.battle) sfx.laugh(); else sfx.wrong();
       wordsEl.querySelector(`[data-word="${s.answer}"]`)?.classList.add('hint');
-      speak(s.answer);
+      speak(s.answer, { now: true });
     }
   }
 
@@ -607,6 +617,7 @@ export function createCapture({ onDone, onAnswer }) {
     $('result-text').textContent = `You got ${s.dragon.name}!`;
     $('result-type').textContent = `${s.dragon.type} Dragon`;
     resultEl.hidden = false;
+    sfx.fanfare();
     speak(`You got ${s.dragon.name}!`);
   }
 
@@ -616,6 +627,7 @@ export function createCapture({ onDone, onAnswer }) {
     $('result-text').textContent = 'You beat Maldred!';
     $('result-type').textContent = 'You are a Dragon Master!';
     resultEl.hidden = false;
+    sfx.clear();
     speak('You beat Maldred!');
   }
 
@@ -632,10 +644,10 @@ export function createCapture({ onDone, onAnswer }) {
   }
 
   $('capture-run').addEventListener('click', () => {
-    if (s && (s.phase === 'appear' || s.phase === 'choose')) finish(false);
+    if (s && (s.phase === 'appear' || s.phase === 'choose')) { sfx.whoa(); finish(false); }
   });
   $('result-ok').addEventListener('click', () => {
-    if (s && (s.phase === 'result' || s.phase === 'victory')) finish(true);
+    if (s && (s.phase === 'result' || s.phase === 'victory')) { sfx.select(); finish(true); }
   });
 
   function update(dt) {
@@ -651,11 +663,14 @@ export function createCapture({ onDone, onAnswer }) {
       s.phase = 'choose';
       wordsEl.classList.add('shown');
     }
+    if (s.phase === 'catch' && !s.catchSound && s.t >= 500) { s.catchSound = true; sfx.catch(); }
     if (s.phase === 'catch' && s.t >= CATCH_MS) showResult();
     if (s.phase === 'hit') {
+      if (!s.beamSound) { s.beamSound = true; sfx.attack(); }
       if (!s.hitApplied && s.t >= 500) {
         s.hitApplied = true;
         s.battle.hearts = Math.max(0, s.battle.hearts - 1);
+        sfx.shield();
       }
       if (s.t >= HIT_MS) {
         if (s.battle.hearts > 0) finish(false);
@@ -699,6 +714,9 @@ export function createCapture({ onDone, onAnswer }) {
 
   function draw() {
     const { t, clock } = s;
+    // The Dragon Stone's pull shakes the whole screen for a moment.
+    ctx.save();
+    if (s.phase === 'catch' && t >= 500 && t < 500 + SHAKE_MS) ctx.translate(Math.round(rand(-2, 2)), Math.round(rand(-2, 2)));
     drawBackground(ctx, s.theme);
     s.effect.back?.(ctx, clock);
 
@@ -715,7 +733,8 @@ export function createCapture({ onDone, onAnswer }) {
     if (s.battle) drawMaldred(t, clock);
 
     if (s.phase === 'appear' || s.phase === 'choose' || s.phase === 'hit' || s.phase === 'defeat' || s.phase === 'victory') {
-      ctx.drawImage(s.sprite.normal, x, y);
+      // Alive: wings flap (or the tail sways) while he reads.
+      ctx.drawImage(Math.floor(clock / FLAP_MS) % 2 ? s.sprite.flap : s.sprite.normal, x, y);
     } else if (s.phase === 'catch') {
       if (t < 500) {
         ctx.drawImage(Math.floor(t / 80) % 2 ? s.sprite.white : s.sprite.normal, x, y);
@@ -785,6 +804,7 @@ export function createCapture({ onDone, onAnswer }) {
         }
       }
     }
+    ctx.restore();
   }
 
   function drawMaldred(t, clock) {

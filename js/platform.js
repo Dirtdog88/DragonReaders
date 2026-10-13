@@ -2,6 +2,8 @@
 // touch controls (◀ ▶ A B), tile levels built from a short recipe, simple
 // physics with tile collisions, and a camera.
 
+import { fitPixelCanvas } from './screen.js';
+
 export const TILE = 16;
 export const VIEW_W = 256;
 export const VIEW_H = 144;
@@ -108,8 +110,18 @@ export const GRAVITY = 0.32;
 export const MAX_FALL = 5;
 
 // Move a body {x, y, w, h, vx, vy} through the grid; solid(ch) says what blocks.
-// Sets body.onGround and returns the tiles it bumped into.
+// Sets body.onGround and returns the tiles it bumped into. A big move (a slow
+// frame) is taken in steps smaller than a tile so nothing passes through walls.
 export function moveBody(b, grid, solid, f = 1) {
+  const biggest = Math.max(Math.abs(b.vx * f), Math.abs(b.vy * f));
+  if (biggest <= TILE - 2) return moveStep(b, grid, solid, f);
+  const n = Math.ceil(biggest / (TILE - 2));
+  const bumps = [];
+  for (let i = 0; i < n; i++) bumps.push(...moveStep(b, grid, solid, f / n));
+  return bumps;
+}
+
+function moveStep(b, grid, solid, f) {
   const bumps = [];
   b.onGround = false;
   // Horizontal
@@ -163,9 +175,7 @@ export function fitCanvas(canvas, box) {
   const fit = () => {
     const r = box.getBoundingClientRect();
     // Leave room for the 6px border on each side.
-    const scale = Math.max(1, Math.min((r.width - 12) / VIEW_W, (r.height - 12) / VIEW_H));
-    canvas.style.width = `${Math.floor(VIEW_W * scale)}px`;
-    canvas.style.height = `${Math.floor(VIEW_H * scale)}px`;
+    fitPixelCanvas(canvas, r.width - 12, r.height - 12);
   };
   window.addEventListener('resize', fit);
   if (window.ResizeObserver) new ResizeObserver(fit).observe(box);

@@ -5,6 +5,9 @@
 import { pixelate } from './dragons.js';
 import { drawThumb } from './dressup.js';
 import { speak } from './speech.js';
+import { sfx } from './sfx.js';
+import { burstStars } from './fx.js';
+import { keepFit } from './screen.js';
 
 const $ = (id) => document.getElementById(id);
 const W = 128;
@@ -196,12 +199,14 @@ export function createSpidey({ getProgress, setProgress, onDone }) {
   const canvas = $('sp-canvas');
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
+  keepFit(canvas, () => [window.innerWidth * 0.8 - 16, window.innerHeight * 0.46 - 16]);
   const wordEl = $('sp-word');
   const lettersEl = $('sp-letters');
   const resultEl = $('sp-result');
   let s = null;
   let raf = 0;
   let last = 0;
+  let nextTimer = 0; // the pause after a right answer
 
   function open() {
     const prog = getProgress();
@@ -261,9 +266,14 @@ export function createSpidey({ getProgress, setProgress, onDone }) {
       lettersEl.querySelectorAll('button').forEach((b) => { b.disabled = true; });
       renderWord(true);
       s.swing = 0; // Spidey swings and webs the letter in
-      speak(s.entry.word);
-      setTimeout(() => {
-        if (!s) return;
+      sfx.right();
+      sfx.thwip();
+      burstStars(btn);
+      speak(s.entry.word, { now: true });
+      const me = s;
+      clearTimeout(nextTimer);
+      nextTimer = setTimeout(() => {
+        if (s !== me) return; // closed, or a new round started
         s.i++;
         if (s.i >= ROUND) finishRound();
         else nextWord();
@@ -272,8 +282,9 @@ export function createSpidey({ getProgress, setProgress, onDone }) {
       s.mistakes++;
       btn.classList.add('wrong');
       btn.disabled = true;
+      sfx.wrong();
       lettersEl.querySelector(`[data-letter="${s.answer}"]`)?.classList.add('hint');
-      speak('Try again!');
+      speak('Try again!', { now: true });
     }
   }
 
@@ -289,11 +300,14 @@ export function createSpidey({ getProgress, setProgress, onDone }) {
     rc.clearRect(0, 0, 32, 32);
     rc.drawImage(spideySprite(), 0, 0);
     resultEl.hidden = false;
+    sfx.fanfare();
     speak('You fixed the web!');
   }
 
   function close() {
     cancelAnimationFrame(raf);
+    clearTimeout(nextTimer);
+    sfx.select();
     el.hidden = true;
     const won = s?.phase === 'won';
     s = null;

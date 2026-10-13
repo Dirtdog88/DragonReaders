@@ -3,6 +3,10 @@
 import { dragonSprite, dragonById, DRAGONS } from './dragons.js';
 import { pumpkinCanvas, kirbyCanvas, ABILITIES } from './art.js';
 import { spideySprite } from './spidey.js';
+import { music } from './music.js';
+import { mountSoundButton } from './audio.js';
+import { sfx } from './sfx.js';
+import './offline.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -43,3 +47,7 @@ const spooky = read('arcade-halloween-v1');
 $('prog-spooky').textContent = `\u{1F36C} ${spooky?.candy || 0}`;
 
 $('prog-kirby').textContent = `✨ ${kirby?.abilities?.length || 0} / ${ABILITIES.length}`;
+
+mountSoundButton(document.querySelector('.top-right'));
+music.play('arcade');
+document.querySelectorAll('.cabinet').forEach((c) => c.addEventListener('click', () => sfx.select()));
